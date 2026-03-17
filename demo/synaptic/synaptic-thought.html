@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thought Propagation — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Thought Propagation</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H,cx,cy;
+  const MAX_N=130,MAX_E=400;
+  let nX,nY,nCD,nA,nCount=0;
+  let eA,eB,eCount=0;
+  let neighbors=[]; // adjacency list per node
+  let thoughts=[];
+  let trails=[];
+  let mouseX=0,mouseY=0;
+  const COLORS=[
+    [212,160,23],  // gold
+    [64,220,255],  // cyan
+    [180,100,255], // purple
+    [255,120,80],  // coral
+    [120,255,160], // mint
+  ];
+  let colorIdx=0;
+
+  function build(){
+    nCount=0;eCount=0;thoughts=[];trails=[];
+    nX=new Float32Array(MAX_N);nY=new Float32Array(MAX_N);
+    nCD=new Float32Array(MAX_N);nA=new Float32Array(MAX_N);
+    eA=new Uint16Array(MAX_E);eB=new Uint16Array(MAX_E);
+
+    // brain-shaped oval: denser in center
+    const a=W*0.35,b=H*0.35;
+    for(let i=0;i<MAX_N;i++){
+      // bias toward center with sqrt distribution
+      const angle=Math.random()*Math.PI*2;
+      const rFrac=Math.sqrt(Math.random())*0.85;
+      nX[i]=cx+Math.cos(angle)*a*rFrac+(Math.random()-0.5)*20;
+      nY[i]=cy+Math.sin(angle)*b*rFrac+(Math.random()-0.5)*20;
+      nA[i]=0.3;
+      nCount++;
+    }
+
+    // edges: knn (k=4) capped
+    neighbors=new Array(nCount);
+    for(let i=0;i<nCount;i++)neighbors[i]=[];
+    const maxD2=(Math.min(W,H)*0.12)*(Math.min(W,H)*0.12);
+    for(let i=0;i<nCount&&eCount<MAX_E;i++){
+      // find nearest 4
+      const dists=[];
+      for(let j=0;j<nCount;j++){
+        if(j===i)continue;
+        const dx=nX[i]-nX[j],dy=nY[i]-nY[j],d2=dx*dx+dy*dy;
+        if(d2<maxD2)dists.push({j,d2});
+      }
+      dists.sort((a,b)=>a.d2-b.d2);
+      for(let k=0;k<Math.min(4,dists.length)&&eCount<MAX_E;k++){
+        const j=dists[k].j;
+        // avoid duplicates
+        if(!neighbors[i].includes(j)){
+          neighbors[i].push(j);neighbors[j].push(i);
+          eA[eCount]=i;eB[eCount]=j;eCount++;
+        }
+      }
+    }
+  }
+
+  function spawnThought(ni,color){
+    if(!color)color=COLORS[colorIdx++%COLORS.length];
+    // pick random neighbor
+    if(neighbors[ni].length===0)return;
+    const target=neighbors[ni][Math.floor(Math.random()*neighbors[ni].length)];
+    thoughts.push({fx:nX[ni],fy:nY[ni],tx:nX[target],ty:nY[target],t:0,from:ni,target:target,color:color,size:6});
+  }
+
+  canvas.addEventListener('click',function(e){
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nCount;i++){
+      const dx=e.clientX-nX[i],dy=e.clientY-nY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<5000){
+      const c=COLORS[colorIdx++%COLORS.length];
+      spawnThought(best,c);
+      spawnThought(best,c);
+    }
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;build()}
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.12)';
+    ctx.fillRect(0,0,W,H);
+
+    // edges
+    ctx.beginPath();ctx.strokeStyle='rgba(130,130,150,0.06)';ctx.lineWidth=0.5;
+    for(let e=0;e<eCount;e++){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    ctx.stroke();
+
+    // trails (fade out)
+    for(let i=trails.length-1;i>=0;i--){
+      const tr=trails[i];
+      tr.a-=0.008;
+      if(tr.a<=0){trails.splice(i,1);continue}
+      ctx.fillStyle=`rgba(${tr.c[0]},${tr.c[1]},${tr.c[2]},${tr.a*0.3})`;
+      ctx.fillRect(tr.x-2,tr.y-2,4,4);
+    }
+
+    // nodes
+    for(let i=0;i<nCount;i++){
+      if(nCD[i]>0){nCD[i]--;nA[i]=0.15+0.3*(nCD[i]/30)}
+      else if(nA[i]<0.3)nA[i]+=0.003;
+      const dx=mouseX-nX[i],dy=mouseY-nY[i],d2=dx*dx+dy*dy;
+      const extra=d2<8000?0.2*(1-Math.sqrt(d2)/90):0;
+      ctx.fillStyle=`rgba(180,180,195,${Math.min(0.8,nA[i]+extra)})`;
+      ctx.fillRect(nX[i]-1.5,nY[i]-1.5,3,3);
+    }
+
+    // thoughts
+    for(let i=thoughts.length-1;i>=0;i--){
+      const th=thoughts[i];
+      th.t+=0.025;
+      const sx=th.fx+(th.tx-th.fx)*th.t,sy=th.fy+(th.ty-th.fy)*th.t;
+      // leave trail
+      if(trails.length<600)trails.push({x:sx,y:sy,a:0.8,c:th.color});
+
+      if(th.t>=1){
+        const ni=th.target;
+        nCD[ni]=30;nA[ni]=1.0;
+        // check for collision at this node
+        let collision=false;
+        for(let j=thoughts.length-1;j>=0;j--){
+          if(j===i)continue;
+          const oth=thoughts[j];
+          if(oth.target===ni&&oth.t>=0.9){
+            collision=true;
+            // flash
+            ctx.fillStyle=`rgba(255,255,255,0.6)`;
+            ctx.beginPath();ctx.arc(nX[ni],nY[ni],15,0,6.283);ctx.fill();
+            // spawn new thoughts in random dirs
+            const c1=th.color,c2=oth.color;
+            if(neighbors[ni].length>0){
+              spawnThought(ni,c1);
+              spawnThought(ni,c2);
+            }
+            thoughts.splice(j,1);
+            if(j<i)i--;
+            break;
+          }
+        }
+        if(!collision){
+          // continue thought
+          if(neighbors[ni].length>0&&Math.random()<0.85){
+            const next=neighbors[ni][Math.floor(Math.random()*neighbors[ni].length)];
+            if(next!==th.from){
+              thoughts.push({fx:nX[ni],fy:nY[ni],tx:nX[next],ty:nY[next],t:0,from:ni,target:next,color:th.color,size:th.size*0.95});
+            }
+          }
+        }
+        thoughts.splice(i,1);
+        continue;
+      }
+
+      // draw thought
+      const c=th.color;
+      const sz=th.size*(1-th.t*0.3);
+      // outer glow (larger semi-transparent circle)
+      ctx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},0.15)`;
+      ctx.beginPath();ctx.arc(sx,sy,sz+4,0,6.283);ctx.fill();
+      // core
+      ctx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${0.8-th.t*0.3})`;
+      ctx.beginPath();ctx.arc(sx,sy,sz,0,6.283);ctx.fill();
+    }
+
+    // cap thoughts to prevent explosion
+    if(thoughts.length>50)thoughts.splice(0,thoughts.length-50);
+    if(trails.length>600)trails.splice(0,trails.length-400);
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

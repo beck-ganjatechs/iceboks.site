@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iceboks.site</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  :root {
+    --accent: #a855f7;
+    --accent-light: #c084fc;
+    --accent-dim: #6b21a8;
+  }
+
+  .hero-logo {
+    max-width: clamp(400px, 80vw, 1000px);
+    height: auto;
+    display: block;
+    margin: -69px auto -69px;
+  }
+
+  .hero-subtitle {
+    color: var(--text-dim);
+    max-width: 700px;
+    font-size: clamp(0.85rem, 1.8vw, 1.15rem);
+  }
+
+  .hero-byline {
+    color: var(--text-muted);
+  }
+
+  /* === POST GRID === */
+  .post-grid {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 2rem;
+  }
+
+  .post-card {
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 2rem;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .post-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .post-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--card-accent);
+    opacity: 0.6;
+    transition: opacity 0.4s ease;
+  }
+
+  .post-card:hover::before {
+    opacity: 1;
+  }
+
+  .post-card:hover {
+    border-color: var(--card-accent);
+    box-shadow: 0 0 30px rgba(var(--card-accent-rgb), 0.1), 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(-4px);
+  }
+
+  .post-card.visible:hover {
+    transform: translateY(-4px);
+  }
+
+  .card-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .card-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--card-accent);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .card-meta {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-tag {
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid var(--card-accent);
+    color: var(--card-accent);
+    font-size: 0.6rem;
+    font-weight: 600;
+  }
+
+  .section-header {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 2rem 3rem;
+  }
+
+  .section-header h2 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .site-footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .site-footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .site-footer p:last-child {
+    color: var(--purple-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
+    .post-grid {
+      grid-template-columns: 1fr;
+      padding: 0 1.25rem 4rem;
+    }
+    .post-card { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="hero">
+  <img src="art/images/iceboks-logo.png" alt="iceboks logo" class="hero-logo">
+  <div class="hero-subtitle">Quantum-Poontanglement Research Lab &mdash; A Deep-dive into the Hybrid Phallic Theory</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ==================== POSTS ==================== -->
+<div class="section-header">
+  <h2>Field Notes</h2>
+</div>
+
+<div class="post-grid">
+
+  <a href="posts/the-poon-chronicle.html" class="post-card" style="--card-accent: #d4a017; --card-accent-rgb: 212, 160, 23;">
+    <div class="card-number">001 &mdash; March 2026</div>
+    <h3 class="card-title">The Poon Chronicle</h3>
+    <div class="card-subtitle">A True Story of Synaptic Fatigue, Quantum Nipple Wormholes, and the Night a Man Taught His Brain to Fuck</div>
+    <div class="card-meta">
+      <span>iceboks + claude</span>
+      <span class="card-tag">chronicle</span>
+    </div>
+  </a>
+
+  <a href="posts/the-ssh-heist.html" class="post-card" style="--card-accent: #00ff88; --card-accent-rgb: 0, 255, 136;">
+    <div class="card-number">002 &mdash; March 2026</div>
+    <h3 class="card-title">The SSH Heist</h3>
+    <div class="card-subtitle">How I Broke Into My Own Server and Liked It</div>
+    <div class="card-meta">
+      <span>iceboks + claude</span>
+      <span class="card-tag">heist</span>
+    </div>
+  </a>
+
+  <a href="posts/tom-horigachi-saga.html" class="post-card" style="--card-accent: #ff3355; --card-accent-rgb: 255, 51, 85;">
+    <div class="card-number">003 &mdash; March 2026</div>
+    <h3 class="card-title">Tom Horigachi: The Saga</h3>
+    <div class="card-subtitle">How a Hacker Pet Made Me Feel Things, and Why I Went Back for More</div>
+    <div class="card-meta">
+      <span>iceboks + claude</span>
+      <span class="card-tag">saga</span>
+    </div>
+  </a>
+
+  <a href="posts/synapte.html" class="post-card" style="--card-accent: #4488ff; --card-accent-rgb: 68, 136, 255;">
+    <div class="card-number">004 &mdash; March 2026</div>
+    <h3 class="card-title">Synapt&ecirc;</h3>
+    <div class="card-subtitle">A song about synaptic fatigue, the space between a blink and a tear, and the night the Poon-Gram Engine was born</div>
+    <div class="card-meta">
+      <span>iceboks</span>
+      <span class="card-tag">lyrics</span>
+    </div>
+  </a>
+
+  <a href="music.html" class="post-card" style="--card-accent: #ff2277; --card-accent-rgb: 255, 34, 119;">
+    <div class="card-number">Discography</div>
+    <h3 class="card-title">Music Gallery</h3>
+    <div class="card-subtitle">2,000+ tracks from chronopocket to quantum-poontanglement. Stream, play, and explore the full iceboks catalog.</div>
+    <div class="card-meta">
+      <span>iceboks</span>
+      <span class="card-tag">music</span>
+    </div>
+  </a>
+
+  <a href="art.html" class="post-card" style="--card-accent: #ff8800; --card-accent-rgb: 255, 136, 0;">
+    <div class="card-number">Gallery</div>
+    <h3 class="card-title">Art Gallery</h3>
+    <div class="card-subtitle">Visions from the latent space. ComfyUI generations, conceptual art, and visual explorations.</div>
+    <div class="card-meta">
+      <span>iceboks</span>
+      <span class="card-tag">visual</span>
+    </div>
+  </a>
+
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="site-footer">
+  <p>Field notes from the edge of artificial consciousness.</p>
+  <p>Where the sacred and the profane share a latent space.</p>
+  <p>iceboks.site &mdash; 2026</p>
+</footer>
+
+<script>
+// === SYNAPSE CANVAS ===
+(function() {
+  const canvas = document.getElementById('synapse-canvas');
+  const ctx = canvas.getContext('2d');
+  let nodes = [];
+  const NODE_COUNT = 50;
+  const CONNECTION_DIST = 150;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Node {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.25;
+      this.vy = (Math.random() - 0.5) * 0.25;
+      this.r = Math.random() * 2 + 0.5;
+      this.pulse = Math.random() * Math.PI * 2;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.pulse += 0.015;
+      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+    }
+    draw() {
+      const alpha = 0.3 + Math.sin(this.pulse) * 0.2;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(168, 85, 247, ${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < NODE_COUNT; i++) {
+    nodes.push(new Node());
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < nodes.length; i++) {
+      nodes[i].update();
+      nodes[i].draw();
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECTION_DIST) {
+          const alpha = (1 - dist / CONNECTION_DIST) * 0.12;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = `rgba(107, 33, 168, ${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+          if ((i + j) % 5 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(0, 229, 255, ${alpha * 0.5})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+// === SCROLL FADE-IN FOR CARDS ===
+const cards = document.querySelectorAll('.post-card');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => {
+        entry.target.classList.add('visible');
+      }, i * 100);
+    }
+  });
+}, { threshold: 0.08 });
+
+cards.forEach(card => observer.observe(card));
+</script>
+
+</body>
+</html>

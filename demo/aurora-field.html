@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurora Field — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: crosshair; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back">← iceboks.site</a>
+<div class="title">Aurora Field</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, mx = 0.5, my = 0.5, t = 0;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; }
+resize();
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = e.clientX / W; my = e.clientY / H; });
+
+// Ember particles
+const embers = [];
+for (let i = 0; i < 60; i++) {
+  embers.push({
+    x: Math.random() * innerWidth,
+    y: Math.random() * innerHeight,
+    vy: -0.3 - Math.random() * 0.8,
+    vx: (Math.random() - 0.5) * 0.3,
+    size: Math.random() * 2 + 0.5,
+    life: Math.random(),
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+// Pseudo-perlin using layered sine
+function noise(x, y, t) {
+  return (
+    Math.sin(x * 0.8 + t * 0.7) * 0.5 +
+    Math.sin(y * 1.2 + t * 0.5) * 0.3 +
+    Math.sin(x * 0.3 + y * 0.7 + t * 0.9) * 0.4 +
+    Math.sin(x * 1.5 - t * 0.3) * 0.2 +
+    Math.sin(y * 0.5 + x * 0.4 + t * 1.1) * 0.3
+  ) / 1.7;
+}
+
+// Flower of Life grid positions
+function getFlowerGrid() {
+  const r = 50;
+  const positions = [];
+  const cols = Math.ceil(W / (r * 1.5)) + 2;
+  const rows = Math.ceil(H / (r * 1.7)) + 2;
+  for (let row = -1; row < rows; row++) {
+    for (let col = -1; col < cols; col++) {
+      const x = col * r * 1.5;
+      const y = row * r * 1.732 + (col % 2 ? r * 0.866 : 0);
+      positions.push({ x, y, r });
+    }
+  }
+  return positions;
+}
+const flowerGrid = getFlowerGrid();
+
+function animate() {
+  ctx.fillStyle = 'rgba(6,6,8,0.12)';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.008;
+
+  const waveIntensity = 0.3 + my * 0.7;
+  const breathe = 1 + Math.sin(t * 0.3) * 0.05;
+
+  // Color balance from mouse X: 0=green, 0.5=purple, 1=gold
+  const greenWeight = Math.max(0, 1 - mx * 2);
+  const purpleWeight = 1 - Math.abs(mx - 0.5) * 2;
+  const goldWeight = Math.max(0, mx * 2 - 1);
+
+  // Draw aurora curtains
+  const strips = 30;
+  const stripW = W / strips;
+
+  for (let i = 0; i < strips; i++) {
+    const x = i * stripW;
+    const nx = i / strips;
+
+    for (let y = 0; y < H; y += 3) {
+      const ny = y / H;
+      const n = noise(nx * 3, ny * 2, t) * waveIntensity;
+      const n2 = noise(nx * 5, ny * 3, t * 1.3) * waveIntensity * 0.5;
+
+      // Aurora is strongest in upper portion
+      const vertFade = Math.max(0, 1 - ny * 1.2) * (0.3 + Math.sin(ny * Math.PI) * 0.7);
+      const intensity = Math.max(0, (n + n2) * vertFade * breathe) * 0.25;
+
+      if (intensity < 0.01) continue;
+
+      // Mix colors based on mouse position
+      const r = Math.floor(30 * purpleWeight + 20 * goldWeight + 10 * greenWeight + intensity * 80 * goldWeight);
+      const g = Math.floor(180 * greenWeight + 30 * purpleWeight + 140 * goldWeight * intensity + intensity * 100 * greenWeight);
+      const b = Math.floor(60 * greenWeight + 180 * purpleWeight + 20 * goldWeight + intensity * 60 * purpleWeight);
+
+      const waveDist = Math.sin(nx * 8 + t * 2 + ny * 3) * stripW * 0.8 * waveIntensity;
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${intensity * 0.15})`;
+      ctx.fillRect(x + waveDist, y, stripW + 2, 4);
+    }
+  }
+
+  // Flower of Life wireframe overlay
+  const auroraCanvas = ctx.getImageData(0, 0, W, H);
+  ctx.save();
+  for (const fp of flowerGrid) {
+    // Sample aurora intensity at this position
+    const px = Math.floor(Math.min(W-1, Math.max(0, fp.x)));
+    const py = Math.floor(Math.min(H-1, Math.max(0, fp.y)));
+    const idx = (py * W + px) * 4;
+    const localIntensity = (auroraCanvas.data[idx] + auroraCanvas.data[idx+1] + auroraCanvas.data[idx+2]) / 765;
+
+    const alpha = 0.02 + localIntensity * 0.08;
+    ctx.strokeStyle = `rgba(200,210,230,${alpha})`;
+    ctx.lineWidth = 0.3 + localIntensity * 0.5;
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(fp.x, fp.y, fp.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Ember particles
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const e of embers) {
+    e.x += e.vx + Math.sin(t + e.phase) * 0.3;
+    e.y += e.vy;
+    e.phase += 0.02;
+    e.life -= 0.001;
+
+    if (e.y < -10 || e.life <= 0) {
+      e.x = Math.random() * W;
+      e.y = H + 10;
+      e.life = 0.5 + Math.random() * 0.5;
+    }
+
+    const flicker = 0.5 + Math.sin(e.phase * 3) * 0.3;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(212,160,23,${e.life * flicker * 0.6})`;
+    ctx.fill();
+
+    // Tiny glow
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size + 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(240,192,64,${e.life * flicker * 0.1})`;
+    ctx.fill();
+  }
+  ctx.restore();
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

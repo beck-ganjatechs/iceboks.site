@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fatigue Visualizer — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+  .stats{position:fixed;top:1.5rem;right:1.5rem;font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(200,200,210,0.5);text-align:right;line-height:1.8;letter-spacing:0.05em}
+  .stats span{color:rgba(212,160,23,0.7)}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Fatigue Visualizer</div>
+<div class="stats" id="stats">Active: <span id="sActive">0</span><br>Fatigued: <span id="sFatigued">0</span><br>Recovering: <span id="sRecovering">0</span></div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  const sActive=document.getElementById('sActive'),sFatigued=document.getElementById('sFatigued'),sRecovering=document.getElementById('sRecovering');
+  let W,H,cx,cy;
+  const MAX_N=100,MAX_E=400;
+  let nX,nY,nHP,nMaxHP,nCD,nA,nCount=0; // nHP=current health
+  let eA,eB,eCount=0;
+  let signals=[];
+  let mouseX=0,mouseY=0;
+  let statFrame=0;
+
+  function build(){
+    nCount=0;eCount=0;signals=[];
+    nX=new Float32Array(MAX_N);nY=new Float32Array(MAX_N);
+    nHP=new Float32Array(MAX_N);nMaxHP=new Float32Array(MAX_N);
+    nCD=new Float32Array(MAX_N);nA=new Float32Array(MAX_N);
+    eA=new Uint8Array(MAX_E);eB=new Uint8Array(MAX_E);
+
+    const spacing=Math.min(W,H)*0.06;
+    const sqrt3=Math.sqrt(3);
+    const cols=Math.floor(W/(spacing*1.3));
+    const rows=Math.floor(H/(spacing*sqrt3*0.55));
+    const offX=(W-cols*spacing*1.3)/2+spacing;
+    const offY=(H-rows*spacing*sqrt3*0.5)/2+spacing;
+
+    for(let r=0;r<rows&&nCount<MAX_N;r++){
+      for(let c=0;c<cols&&nCount<MAX_N;c++){
+        nX[nCount]=offX+c*spacing*1.3+(r%2?spacing*0.65:0);
+        nY[nCount]=offY+r*spacing*sqrt3*0.5;
+        nHP[nCount]=1.0;nMaxHP[nCount]=1.0;nA[nCount]=0.5;
+        nCount++;
+      }
+    }
+    const maxD=spacing*1.6;
+    for(let i=0;i<nCount&&eCount<MAX_E;i++){
+      for(let j=i+1;j<nCount&&eCount<MAX_E;j++){
+        const dx=nX[i]-nX[j],dy=nY[i]-nY[j];
+        if(dx*dx+dy*dy<maxD*maxD){eA[eCount]=i;eB[eCount]=j;eCount++}
+      }
+    }
+  }
+
+  function fireNode(ni){
+    if(nCD[ni]>0||nHP[ni]<0.15)return;
+    nCD[ni]=40;nA[ni]=1.0;
+    nHP[ni]=Math.max(0,nHP[ni]-0.2); // deplete health
+    for(let e=0;e<eCount;e++){
+      let t=-1;
+      if(eA[e]===ni)t=eB[e]; else if(eB[e]===ni)t=eA[e];
+      if(t>=0&&nHP[t]>=0.15)signals.push({fx:nX[ni],fy:nY[ni],tx:nX[t],ty:nY[t],t:0,target:t});
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nCount;i++){
+      const dx=e.clientX-nX[i],dy=e.clientY-nY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<3000)fireNode(best);
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;build()}
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.2)';
+    ctx.fillRect(0,0,W,H);
+
+    let active=0,fatigued=0,recovering=0;
+
+    // edges
+    ctx.beginPath();ctx.strokeStyle='rgba(140,140,160,0.08)';ctx.lineWidth=0.6;
+    for(let e=0;e<eCount;e++){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    ctx.stroke();
+
+    // nodes
+    const R=6;
+    for(let i=0;i<nCount;i++){
+      // recovery
+      if(nCD[i]>0)nCD[i]--;
+      if(nCD[i]===0&&nHP[i]<1.0)nHP[i]=Math.min(1.0,nHP[i]+0.002);
+      if(nA[i]>0.5)nA[i]-=0.01;
+
+      // stats
+      if(nHP[i]<0.15)fatigued++;
+      else if(nHP[i]<0.8)recovering++;
+      else active++;
+
+      // mouse
+      const dx=mouseX-nX[i],dy=mouseY-nY[i],d2=dx*dx+dy*dy;
+      const extra=d2<6000?0.2*(1-Math.sqrt(d2)/78):0;
+
+      // node core
+      const hp=nHP[i];
+      let r2,g,b;
+      if(hp>0.5){r2=200;g=200;b=210}
+      else if(hp>0.15){r2=220;g=100+hp*200;b=60}
+      else{r2=100;g=40;b=40}
+      ctx.fillStyle=`rgba(${r2},${g},${b},${Math.min(1,nA[i]+extra)})`;
+      ctx.fillRect(nX[i]-2,nY[i]-2,4,4);
+
+      // health arc
+      const arcR=R+2;
+      const endAngle=-Math.PI/2+hp*Math.PI*2;
+      // background arc (dark)
+      ctx.beginPath();ctx.arc(nX[i],nY[i],arcR,-Math.PI/2,Math.PI*1.5);
+      ctx.strokeStyle='rgba(60,60,70,0.3)';ctx.lineWidth=1.5;ctx.stroke();
+      // health arc
+      if(hp>0.01){
+        ctx.beginPath();ctx.arc(nX[i],nY[i],arcR,-Math.PI/2,endAngle);
+        let arcColor;
+        if(hp>0.6)arcColor='rgba(80,200,120,0.6)';
+        else if(hp>0.3)arcColor='rgba(212,160,23,0.6)';
+        else arcColor='rgba(200,60,60,0.6)';
+        ctx.strokeStyle=arcColor;ctx.lineWidth=1.5;ctx.stroke();
+      }
+    }
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.03;
+      if(s.t>=1){fireNode(s.target);signals.splice(i,1);continue}
+      const sx=s.fx+(s.tx-s.fx)*s.t,sy=s.fy+(s.ty-s.fy)*s.t;
+      ctx.fillStyle=`rgba(212,160,23,${1-s.t*0.4})`;
+      ctx.fillRect(sx-3,sy-3,6,6);
+    }
+
+    // update stats every 10 frames
+    statFrame++;
+    if(statFrame>=10){statFrame=0;sActive.textContent=active;sFatigued.textContent=fatigued;sRecovering.textContent=recovering}
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

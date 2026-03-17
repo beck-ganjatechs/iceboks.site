@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synaptic Web Collection — iceboks.site</title>
+<link rel="stylesheet" href="../../style.css">
+<style>
+  :root {
+    --accent: #d4a017;
+    --accent-light: #f0c040;
+    --accent-dim: #8a6a10;
+  }
+  body { background: #060608; }
+  .hero { min-height: 35vh; padding-top: 5rem; }
+  .hero-title {
+    font-size: clamp(1.8rem, 5vw, 3.2rem);
+    background: linear-gradient(135deg, #d4a017, #f0c040, #b0c8e8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; text-shadow: none; animation: none;
+  }
+  .hero-subtitle { color: var(--text-dim); max-width: 640px; font-size: clamp(0.8rem, 1.4vw, 1rem); line-height: 1.6; }
+
+  .demo-grid {
+    position: relative; z-index: 1;
+    max-width: 1000px; margin: 0 auto;
+    padding: 0 2rem 6rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .demo-card {
+    position: relative;
+    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.4s ease;
+    background: var(--bg-surface);
+  }
+  .demo-card:hover {
+    border-color: rgba(212,160,23,0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(212,160,23,0.08);
+  }
+
+  .demo-preview {
+    width: 100%; height: 180px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .demo-info {
+    padding: 1.25rem 1.5rem;
+  }
+  .demo-info h3 {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 1.1rem; color: var(--accent-light); margin-bottom: 0.5rem;
+  }
+  .demo-info p {
+    font-size: 0.85rem; color: var(--text-dim); line-height: 1.5;
+  }
+  .demo-tag {
+    display: inline-block; margin-top: 0.75rem;
+    padding: 0.2rem 0.6rem; border-radius: 4px;
+    font-family: 'Source Code Pro', monospace; font-size: 0.7rem;
+    color: var(--accent); border: 1px solid var(--accent-dim);
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 700px) {
+    .demo-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<a href="../../index.html" class="back-link" style="position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;">&larr; iceboks.site</a>
+
+<section class="hero" id="hero">
+  <div class="hero-title">Synaptic Web Collection</div>
+  <div class="hero-subtitle">Ten interactive explorations of neural signal propagation, memory formation, fatigue mechanics, and emergent network behavior. Each demo runs at 60fps on modest hardware.</div>
+</section>
+
+<div class="demo-grid">
+
+  <a href="synaptic-minimal.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(200,200,210,0.04) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <circle cx="0" cy="0" r="3" fill="#b0b8c8"/>
+        <circle cx="30" cy="0" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="-30" cy="0" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="15" cy="26" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="-15" cy="26" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="15" cy="-26" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="-15" cy="-26" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <line x1="0" y1="0" x2="30" y2="0" stroke="#b0b8c8" stroke-width="0.4" opacity="0.3"/>
+        <line x1="0" y1="0" x2="-30" y2="0" stroke="#b0b8c8" stroke-width="0.4" opacity="0.3"/>
+        <line x1="0" y1="0" x2="15" y2="26" stroke="#b0b8c8" stroke-width="0.4" opacity="0.3"/>
+        <line x1="0" y1="0" x2="-15" y2="26" stroke="#b0b8c8" stroke-width="0.4" opacity="0.3"/>
+        <circle cx="12" cy="5" r="1.5" fill="#d4a017" opacity="0.8"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Minimal Pulse</h3>
+      <p>Stripped-down hex ring network. Pure line art with gold signal propagation. No glow, no gradients -- just clean geometry.</p>
+      <span class="demo-tag">minimal / hex-rings / signals</span>
+    </div>
+  </a>
+
+  <a href="synaptic-cascade.html" class="demo-card">
+    <div class="demo-preview" style="background: linear-gradient(180deg, rgba(212,160,23,0.04) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <circle cx="-30" cy="-60" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="0" cy="-60" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="30" cy="-60" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="-15" cy="-30" r="2" fill="#d4a017" opacity="0.6"/>
+        <circle cx="15" cy="-30" r="2" fill="#d4a017" opacity="0.6"/>
+        <circle cx="-30" cy="0" r="2" fill="#d4a017" opacity="0.4"/>
+        <circle cx="0" cy="0" r="2" fill="#d4a017" opacity="0.4"/>
+        <circle cx="30" cy="0" r="2" fill="#d4a017" opacity="0.4"/>
+        <line x1="-30" y1="-60" x2="-15" y2="-30" stroke="#d4a017" stroke-width="0.5" opacity="0.3"/>
+        <line x1="0" y1="-60" x2="-15" y2="-30" stroke="#d4a017" stroke-width="0.5" opacity="0.3"/>
+        <line x1="0" y1="-60" x2="15" y2="-30" stroke="#d4a017" stroke-width="0.5" opacity="0.3"/>
+        <rect x="-2" y="-45" width="4" height="6" fill="#d4a017" opacity="0.7"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Cascade</h3>
+      <p>Top-to-bottom waterfall layout. Signals flow downward like gold rain through layered rows. Click at the top to trigger cascading waves.</p>
+      <span class="demo-tag">waterfall / gravity / rain</span>
+    </div>
+  </a>
+
+  <a href="synaptic-heartbeat.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(212,160,23,0.06) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <circle cx="0" cy="0" r="8" fill="none" stroke="#d4a017" stroke-width="1" opacity="0.5"/>
+        <circle cx="0" cy="0" r="25" fill="none" stroke="#b0b8c8" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="0" cy="0" r="45" fill="none" stroke="#b0b8c8" stroke-width="0.4" opacity="0.2"/>
+        <circle cx="0" cy="0" r="65" fill="none" stroke="#b0b8c8" stroke-width="0.3" opacity="0.15"/>
+        <circle cx="0" cy="0" r="4" fill="#d4a017" opacity="0.6"/>
+        <circle cx="0" cy="-25" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="22" cy="12" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="-22" cy="12" r="2" fill="#b0b8c8" opacity="0.4"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Heartbeat</h3>
+      <p>Center node pulses at 72bpm, sending rhythmic waves outward through concentric rings. The whole network breathes. Click to add extra beats.</p>
+      <span class="demo-tag">rhythm / pulse / breathing</span>
+    </div>
+  </a>
+
+  <a href="synaptic-memory.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(212,160,23,0.05) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <line x1="-40" y1="-20" x2="-10" y2="-20" stroke="#d4a017" stroke-width="2" opacity="0.6"/>
+        <line x1="-10" y1="-20" x2="20" y2="-20" stroke="#d4a017" stroke-width="2" opacity="0.6"/>
+        <line x1="20" y1="-20" x2="35" y2="5" stroke="#d4a017" stroke-width="1.5" opacity="0.4"/>
+        <line x1="-40" y1="10" x2="-10" y2="10" stroke="#b0b8c8" stroke-width="0.4" opacity="0.15"/>
+        <line x1="-10" y1="10" x2="20" y2="10" stroke="#b0b8c8" stroke-width="0.4" opacity="0.15"/>
+        <circle cx="-40" cy="-20" r="2" fill="#d4a017" opacity="0.5"/>
+        <circle cx="-10" cy="-20" r="2" fill="#d4a017" opacity="0.5"/>
+        <circle cx="20" cy="-20" r="2" fill="#d4a017" opacity="0.5"/>
+        <circle cx="35" cy="5" r="2" fill="#d4a017" opacity="0.4"/>
+        <circle cx="-40" cy="10" r="2" fill="#b0b8c8" opacity="0.3"/>
+        <circle cx="-10" cy="10" r="2" fill="#b0b8c8" opacity="0.3"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Memory Trace</h3>
+      <p>Signals permanently strengthen edges they traverse. Frequently-used paths become gold highways while unused connections stay dark. Watch memory form.</p>
+      <span class="demo-tag">hebbian / memory / pathways</span>
+    </div>
+  </a>
+
+  <a href="synaptic-fatigue.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(200,60,60,0.04) 0%, rgba(80,200,120,0.03) 50%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.4">
+        <circle cx="-20" cy="0" r="8" fill="none" stroke="#50c878" stroke-width="1.5"/>
+        <circle cx="20" cy="0" r="8" fill="none" stroke="#d4a017" stroke-width="1.5" stroke-dasharray="12 40"/>
+        <circle cx="0" cy="-30" r="8" fill="none" stroke="#c83c3c" stroke-width="1.5" stroke-dasharray="5 47"/>
+        <circle cx="-20" cy="0" r="2" fill="#b0b8c8" opacity="0.6"/>
+        <circle cx="20" cy="0" r="2" fill="#d4a017" opacity="0.5"/>
+        <circle cx="0" cy="-30" r="2" fill="#c83c3c" opacity="0.4"/>
+        <line x1="-20" y1="0" x2="20" y2="0" stroke="#b0b8c8" stroke-width="0.4" opacity="0.2"/>
+        <line x1="-20" y1="0" x2="0" y2="-30" stroke="#b0b8c8" stroke-width="0.4" opacity="0.2"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Fatigue Visualizer</h3>
+      <p>Visible health arcs around each node deplete with every firing. Exhausted nodes turn red and go dark. Recovery is gradual and visible. Live stats in corner.</p>
+      <span class="demo-tag">fatigue / health / recovery</span>
+    </div>
+  </a>
+
+  <a href="synaptic-thought.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(64,220,255,0.03) 0%, rgba(180,100,255,0.03) 50%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <ellipse cx="0" cy="0" rx="70" ry="50" fill="none" stroke="#b0b8c8" stroke-width="0.4" opacity="0.2"/>
+        <circle cx="-20" cy="-10" r="6" fill="#d4a017" opacity="0.3"/>
+        <circle cx="25" cy="5" r="6" fill="#64dcff" opacity="0.3"/>
+        <circle cx="0" cy="15" r="6" fill="#b464ff" opacity="0.3"/>
+        <circle cx="-20" cy="-10" r="2" fill="#d4a017" opacity="0.6"/>
+        <circle cx="25" cy="5" r="2" fill="#64dcff" opacity="0.6"/>
+        <circle cx="0" cy="15" r="2" fill="#b464ff" opacity="0.6"/>
+        <line x1="-20" y1="-10" x2="25" y2="5" stroke="#b0b8c8" stroke-width="0.3" opacity="0.2"/>
+        <line x1="25" y1="5" x2="0" y2="15" stroke="#b0b8c8" stroke-width="0.3" opacity="0.2"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Thought Propagation</h3>
+      <p>Colored thought-pulses travel through a brain-shaped network leaving trails. When thoughts collide at a node, they flash and spawn new directions.</p>
+      <span class="demo-tag">thoughts / collision / multicolor</span>
+    </div>
+  </a>
+
+  <a href="synaptic-music.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(212,160,23,0.04) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <rect x="-65" y="-50" width="8" height="100" fill="#d4a017" opacity="0.06"/>
+        <circle cx="-60" cy="-40" r="3" fill="#d4a017" opacity="0.5"/>
+        <circle cx="-60" cy="-20" r="3" fill="#b0b8c8" opacity="0.2"/>
+        <circle cx="-60" cy="0" r="3" fill="#d4a017" opacity="0.5"/>
+        <circle cx="-60" cy="20" r="3" fill="#b0b8c8" opacity="0.2"/>
+        <circle cx="-30" cy="-40" r="3" fill="#b0b8c8" opacity="0.2"/>
+        <circle cx="-30" cy="-20" r="3" fill="#d4a017" opacity="0.5"/>
+        <circle cx="-30" cy="0" r="3" fill="#b0b8c8" opacity="0.2"/>
+        <circle cx="-30" cy="20" r="3" fill="#d4a017" opacity="0.5"/>
+        <circle cx="0" cy="-40" r="3" fill="#b0b8c8" opacity="0.2"/>
+        <circle cx="0" cy="-20" r="3" fill="#b0b8c8" opacity="0.2"/>
+        <circle cx="0" cy="0" r="3" fill="#d4a017" opacity="0.5"/>
+        <circle cx="0" cy="20" r="3" fill="#b0b8c8" opacity="0.2"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Rhythm Grid</h3>
+      <p>A step sequencer built from neurons. Click nodes to toggle them on/off. A sweeping playhead triggers tones via Web Audio API. Different rows = different frequencies.</p>
+      <span class="demo-tag">sequencer / audio / interactive</span>
+    </div>
+  </a>
+
+  <a href="synaptic-constellation.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(212,180,80,0.03) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <circle cx="-30" cy="-40" r="2" fill="#d4b450" opacity="0.6"/>
+        <circle cx="40" cy="-20" r="2" fill="#d4b450" opacity="0.5"/>
+        <circle cx="-50" cy="20" r="2" fill="#d4b450" opacity="0.4"/>
+        <circle cx="10" cy="40" r="2" fill="#d4b450" opacity="0.6"/>
+        <circle cx="50" cy="30" r="2" fill="#d4b450" opacity="0.5"/>
+        <circle cx="-10" cy="-10" r="2" fill="#d4b450" opacity="0.7"/>
+        <line x1="-30" y1="-40" x2="-10" y2="-10" stroke="#b0b8c8" stroke-width="0.3" opacity="0.2"/>
+        <line x1="-10" y1="-10" x2="40" y2="-20" stroke="#b0b8c8" stroke-width="0.3" opacity="0.2"/>
+        <line x1="-10" y1="-10" x2="10" y2="40" stroke="#b0b8c8" stroke-width="0.3" opacity="0.2"/>
+        <line x1="-50" y1="20" x2="-10" y2="-10" stroke="#b0b8c8" stroke-width="0.3" opacity="0.15"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Constellation</h3>
+      <p>Stars drift and self-organize toward hex grid formations via spring forces. Edges form and break dynamically. Click to add disruption. Slow and meditative.</p>
+      <span class="demo-tag">self-organizing / springs / meditative</span>
+    </div>
+  </a>
+
+  <a href="synaptic-dual.html" class="demo-card">
+    <div class="demo-preview" style="background: linear-gradient(90deg, rgba(200,200,220,0.03) 0%, rgba(180,100,255,0.03) 50%, rgba(200,190,210,0.03) 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <circle cx="-40" cy="-20" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="-40" cy="20" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="-55" cy="0" r="2" fill="#b0b8c8" opacity="0.4"/>
+        <circle cx="40" cy="-15" r="2" fill="#c8b0d0" opacity="0.4"/>
+        <circle cx="35" cy="25" r="2" fill="#c8b0d0" opacity="0.4"/>
+        <circle cx="55" cy="5" r="2" fill="#c8b0d0" opacity="0.4"/>
+        <line x1="-40" y1="-20" x2="-40" y2="20" stroke="#b0b8c8" stroke-width="0.4" opacity="0.2"/>
+        <line x1="-40" y1="-20" x2="-55" y2="0" stroke="#b0b8c8" stroke-width="0.4" opacity="0.2"/>
+        <line x1="40" y1="-15" x2="35" y2="25" stroke="#c8b0d0" stroke-width="0.4" opacity="0.2"/>
+        <line x1="-40" y1="20" x2="35" y2="25" stroke="#b464ff" stroke-width="0.8" opacity="0.3"/>
+        <line x1="-40" y1="-20" x2="40" y2="-15" stroke="#64dcff" stroke-width="0.8" opacity="0.3"/>
+        <line x1="0" y1="-80" x2="0" y2="80" stroke="#b0b8c8" stroke-width="0.3" opacity="0.1"/>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Dual Brain</h3>
+      <p>Two hemispheres connected by a corpus callosum bridge. Left brain is orderly hex grid, right brain is chaotic. Signals change color when crossing.</p>
+      <span class="demo-tag">hemispheres / bridge / cross-talk</span>
+    </div>
+  </a>
+
+  <a href="synaptic-evolution.html" class="demo-card">
+    <div class="demo-preview" style="background: radial-gradient(circle at center, rgba(212,160,23,0.04) 0%, #0d0d12 100%);">
+      <svg width="160" height="160" viewBox="-80 -80 160 160" style="opacity:0.35">
+        <circle cx="0" cy="0" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="20" cy="-15" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="-15" cy="20" r="2" fill="#b0b8c8" opacity="0.5"/>
+        <circle cx="35" cy="10" r="2" fill="#d4a017" opacity="0.4"/>
+        <circle cx="-40" cy="-10" r="2" fill="#b0b8c8" opacity="0.3"/>
+        <line x1="0" y1="0" x2="20" y2="-15" stroke="#d4a017" stroke-width="1" opacity="0.3"/>
+        <line x1="0" y1="0" x2="-15" y2="20" stroke="#d4a017" stroke-width="0.6" opacity="0.2"/>
+        <line x1="20" y1="-15" x2="35" y2="10" stroke="#b0b8c8" stroke-width="0.3" opacity="0.15"/>
+        <line x1="0" y1="0" x2="-40" y2="-10" stroke="#b0b8c8" stroke-width="0.3" opacity="0.1" stroke-dasharray="2 3"/>
+        <circle cx="50" cy="-30" r="2" fill="#d4a017" opacity="0.6"/>
+        <text x="48" y="-34" font-size="8" fill="#d4a017" opacity="0.3">+</text>
+      </svg>
+    </div>
+    <div class="demo-info">
+      <h3>Evolution</h3>
+      <p>Starts with 5 nodes. The network grows, strengthens active paths, and prunes unused connections. New nodes appear near your cursor. A living network.</p>
+      <span class="demo-tag">growth / pruning / alive</span>
+    </div>
+  </a>
+
+</div>
+
+<footer style="text-align:center; padding:2rem; position:relative; z-index:1;">
+  <p style="font-family:'Inter',sans-serif; font-size:0.7rem; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">iceboks quantum research lab — 2026</p>
+</footer>
+
+<script>
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+  resize();
+  addEventListener('resize', resize);
+  for (let i = 0; i < 30; i++) {
+    particles.push({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2, r: Math.random()*1.2+0.4, p: Math.random()*6.28 });
+  }
+  function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for (let i=0;i<particles.length;i++) {
+      const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.p+=0.01;
+      if(p.x<0||p.x>canvas.width)p.vx*=-1; if(p.y<0||p.y>canvas.height)p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28);
+      ctx.fillStyle=`rgba(212,160,23,${0.2+Math.sin(p.p)*0.1})`; ctx.fill();
+      for(let j=i+1;j<particles.length;j++){
+        const q=particles[j]; const d=Math.hypot(p.x-q.x,p.y-q.y);
+        if(d<140){ ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=`rgba(212,160,23,${(1-d/140)*0.06})`; ctx.lineWidth=0.4; ctx.stroke(); }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>

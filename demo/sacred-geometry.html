@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sacred Geometry Portal — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: crosshair; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back">← iceboks.site</a>
+<div class="title">Sacred Geometry Portal</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, mx = 0, my = 0, t = 0;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; }
+resize();
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = (e.clientX - cx) / cx; my = (e.clientY - cy) / cy; });
+
+// Flower of Life: 7 circles (1 center + 6 around it)
+function flowerOfLife(x, y, r, rot, alpha, depth) {
+  if (depth <= 0 || alpha < 0.01) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+
+  // Draw center circle
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(180, 180, 200, ${alpha * 0.6})`;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // 6 surrounding circles
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i;
+    const px = Math.cos(angle) * r;
+    const py = Math.sin(angle) * r;
+
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+
+    // Alternate gold and silver
+    const isGold = i % 2 === 0;
+    const baseR = isGold ? 212 : 180;
+    const baseG = isGold ? 160 : 180;
+    const baseB = isGold ? 23 : 210;
+    ctx.strokeStyle = `rgba(${baseR}, ${baseG}, ${baseB}, ${alpha * 0.5})`;
+    ctx.lineWidth = 0.8 + alpha;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Particles flowing along geometry
+const particles = [];
+for (let i = 0; i < 200; i++) {
+  particles.push({
+    angle: Math.random() * Math.PI * 2,
+    radius: Math.random() * 300 + 50,
+    speed: (Math.random() - 0.5) * 0.008,
+    radialSpeed: (Math.random() - 0.5) * 0.3,
+    size: Math.random() * 2.5 + 0.5,
+    gold: Math.random() > 0.4,
+    life: Math.random(),
+    decay: 0.001 + Math.random() * 0.002,
+  });
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    p.angle += p.speed;
+    p.radius += p.radialSpeed;
+    p.life -= p.decay;
+
+    if (p.life <= 0 || p.radius < 10 || p.radius > Math.max(W, H) * 0.6) {
+      p.angle = Math.random() * Math.PI * 2;
+      p.radius = Math.random() * 300 + 50;
+      p.life = 1;
+    }
+
+    const x = cx + Math.cos(p.angle) * p.radius;
+    const y = cy + Math.sin(p.angle) * p.radius;
+    const alpha = p.life * 0.8;
+
+    ctx.beginPath();
+    ctx.arc(x, y, p.size, 0, Math.PI * 2);
+    if (p.gold) {
+      ctx.fillStyle = `rgba(212, 160, 23, ${alpha})`;
+      ctx.shadowColor = 'rgba(212, 160, 23, 0.5)';
+    } else {
+      ctx.fillStyle = `rgba(200, 200, 230, ${alpha})`;
+      ctx.shadowColor = 'rgba(200, 200, 230, 0.3)';
+    }
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Pulsing glow behind center
+function drawGlow() {
+  const pulse = Math.sin(t * 0.5) * 0.15 + 0.35;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 350);
+  grad.addColorStop(0, `rgba(212, 160, 23, ${pulse * 0.12})`);
+  grad.addColorStop(0.4, `rgba(107, 33, 168, ${pulse * 0.06})`);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function animate() {
+  t += 0.016;
+  ctx.fillStyle = 'rgba(6, 6, 8, 0.15)';
+  ctx.fillRect(0, 0, W, H);
+
+  drawGlow();
+
+  // Multiple nested flowers with breathing animation
+  const breathe = Math.sin(t * 0.3) * 20;
+  const mouseRot = mx * 0.1;
+  const mouseScale = 1 + my * 0.05;
+
+  // Outer ring (subtle)
+  flowerOfLife(cx, cy, (200 + breathe) * mouseScale, t * 0.02 + mouseRot, 0.15, 1);
+
+  // Middle ring
+  flowerOfLife(cx, cy, (140 + breathe * 0.7) * mouseScale, -t * 0.03 + mouseRot, 0.35, 1);
+
+  // Inner ring (bright)
+  flowerOfLife(cx, cy, (80 + breathe * 0.4) * mouseScale, t * 0.05 + mouseRot, 0.7, 1);
+
+  // Core (brightest)
+  flowerOfLife(cx, cy, (35 + breathe * 0.2) * mouseScale, -t * 0.08 + mouseRot, 1.0, 1);
+
+  // Vesica Piscis overlay at center
+  const vr = (50 + breathe * 0.3) * mouseScale;
+  for (let i = 0; i < 3; i++) {
+    const a = (Math.PI * 2 / 3) * i + t * 0.04;
+    const vx = cx + Math.cos(a) * vr * 0.3;
+    const vy = cy + Math.sin(a) * vr * 0.3;
+    ctx.beginPath();
+    ctx.arc(vx, vy, vr, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(212, 160, 23, ${0.15 + Math.sin(t + i) * 0.08})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  drawParticles();
+
+  // Connecting lines from mouse to nearest geometry points
+  const mouseX = cx + mx * W * 0.4;
+  const mouseY = cy + my * H * 0.4;
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 3) * i + t * 0.05;
+    const px = cx + Math.cos(a) * 140 * mouseScale;
+    const py = cy + Math.sin(a) * 140 * mouseScale;
+    const dist = Math.hypot(mouseX - px, mouseY - py);
+    if (dist < 250) {
+      const alpha = (1 - dist / 250) * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(mouseX, mouseY);
+      ctx.lineTo(px, py);
+      ctx.strokeStyle = `rgba(212, 160, 23, ${alpha})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

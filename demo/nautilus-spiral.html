@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nautilus Spiral — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: crosshair; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back">← iceboks.site</a>
+<div class="title">Nautilus Spiral</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, mx = 0.5, my = 0.5, t = 0;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; }
+resize();
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = e.clientX / W; my = e.clientY / H; });
+
+const PHI = (1 + Math.sqrt(5)) / 2;
+const FIB = [1,1,2,3,5,8,13,21,34,55,89,144,233,377,610];
+
+// Frost branches
+let branches = [];
+
+// Golden ratio rectangles
+let rects = [];
+
+// Background Flower of Life rotation
+let bgRot = 0;
+
+let spiralProgress = 0;
+const maxAngle = Math.PI * 12;
+let cyclePhase = 0; // 0 = growing, 1 = holding, 2 = fading
+
+function goldenSpiral(angle) {
+  const r = 4 * Math.pow(PHI, angle / (Math.PI * 0.5));
+  return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), r: r };
+}
+
+function drawFrostBranch(x, y, angle, len, depth, alpha) {
+  if (depth <= 0 || len < 2) return;
+  const ex = x + Math.cos(angle) * len;
+  const ey = y + Math.sin(angle) * len;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(ex, ey);
+  ctx.strokeStyle = `rgba(180,210,255,${alpha})`;
+  ctx.lineWidth = depth * 0.5;
+  ctx.stroke();
+  drawFrostBranch(ex, ey, angle - 0.5, len * 0.65, depth - 1, alpha * 0.7);
+  drawFrostBranch(ex, ey, angle + 0.5, len * 0.65, depth - 1, alpha * 0.7);
+}
+
+function drawFlowerOfLife(x, y, r, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(bgRot);
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(180,190,210,${alpha})`;
+  ctx.lineWidth = 0.4;
+  ctx.stroke();
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * r, Math.sin(a) * r, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function animate() {
+  ctx.fillStyle = 'rgba(6,6,8,0.08)';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.01;
+  bgRot += 0.001;
+
+  // Mouse distance from center controls speed
+  const dist = Math.hypot(mx - 0.5, my - 0.5) * 2;
+  const speed = 0.02 + dist * 0.08;
+
+  // Background Flower of Life
+  const bAlpha = 0.025 + Math.sin(t * 0.3) * 0.01;
+  drawFlowerOfLife(cx, cy, Math.min(W, H) * 0.35, bAlpha);
+  drawFlowerOfLife(cx - 200, cy - 100, 80, bAlpha * 0.5);
+  drawFlowerOfLife(cx + 250, cy + 80, 60, bAlpha * 0.4);
+
+  // Spiral growth cycle
+  if (cyclePhase === 0) {
+    spiralProgress += speed;
+    if (spiralProgress >= maxAngle) { cyclePhase = 1; branches = []; }
+  } else if (cyclePhase === 1) {
+    // Hold briefly then fade
+    if (Math.random() < 0.02) cyclePhase = 2;
+  } else {
+    spiralProgress -= speed * 2;
+    if (spiralProgress <= 0) { spiralProgress = 0; cyclePhase = 0; branches = []; rects = []; }
+  }
+
+  // Draw spiral
+  ctx.beginPath();
+  let prevX, prevY;
+  const steps = Math.floor(spiralProgress * 10);
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / 10);
+    const pos = goldenSpiral(angle);
+    if (pos.r > Math.max(W, H)) break;
+    if (i === 0) { ctx.moveTo(pos.x, pos.y); }
+    else { ctx.lineTo(pos.x, pos.y); }
+    prevX = pos.x; prevY = pos.y;
+  }
+  // Gold glow
+  ctx.strokeStyle = `rgba(212,160,23,0.7)`;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = 'rgba(240,192,64,0.4)';
+  ctx.shadowBlur = 15;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Frost branches at fibonacci intervals
+  const currentStep = Math.floor(spiralProgress * 10);
+  for (let i = 0; i < FIB.length; i++) {
+    const fibStep = FIB[i] * 3;
+    if (fibStep < currentStep && fibStep > 0) {
+      const angle = fibStep / 10;
+      const pos = goldenSpiral(angle);
+      if (pos.r < Math.max(W, H)) {
+        const perpAngle = angle + Math.PI / 2;
+        const branchAlpha = cyclePhase === 2 ? Math.max(0, spiralProgress / maxAngle) : 0.35;
+        drawFrostBranch(pos.x, pos.y, perpAngle, 15 + i * 3, 3, branchAlpha);
+        drawFrostBranch(pos.x, pos.y, perpAngle + Math.PI, 15 + i * 3, 3, branchAlpha);
+      }
+    }
+  }
+
+  // Golden ratio rectangles at fib intervals
+  ctx.save();
+  for (let i = 0; i < FIB.length; i++) {
+    const fibStep = FIB[i] * 5;
+    if (fibStep < currentStep && fibStep > 0) {
+      const angle = fibStep / 10;
+      const pos = goldenSpiral(angle);
+      if (pos.r < Math.max(W, H) * 0.8) {
+        const size = 8 + i * 2;
+        const alpha = (cyclePhase === 2 ? spiralProgress / maxAngle : 1) * (0.1 + Math.sin(t + i) * 0.05);
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(angle);
+        ctx.strokeStyle = `rgba(240,192,64,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(-size/2, -size/(2*PHI), size, size/PHI);
+        ctx.restore();
+      }
+    }
+  }
+  ctx.restore();
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Grid — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Rhythm Grid</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H;
+  const COLS=12,ROWS=8;
+  const MAX_N=COLS*ROWS,MAX_E=400;
+  let nX,nY,nActive,nFlash,nCount=0;
+  let eA,eB,eCount=0;
+  let signals=[];
+  let mouseX=0,mouseY=0;
+  let audioCtx=null;
+  let playhead=0,beatTimer=0;
+  const BPM=140,BEAT_FRAMES=Math.round(60/(BPM)*60);
+
+  // pentatonic scale frequencies (rows map to notes)
+  const FREQS=[523.25,493.88,440,392,349.23,329.63,293.66,261.63];
+
+  function initAudio(){
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  }
+
+  function playTone(row){
+    if(!audioCtx)return;
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.connect(gain);gain.connect(audioCtx.destination);
+    osc.type='sine';
+    osc.frequency.value=FREQS[row%FREQS.length];
+    gain.gain.setValueAtTime(0.08,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.3);
+    osc.start();osc.stop(audioCtx.currentTime+0.3);
+  }
+
+  function build(){
+    nCount=0;eCount=0;signals=[];
+    nX=new Float32Array(MAX_N);nY=new Float32Array(MAX_N);
+    nActive=new Uint8Array(MAX_N);
+    nFlash=new Float32Array(MAX_N);
+    eA=new Uint16Array(MAX_E);eB=new Uint16Array(MAX_E);
+
+    const spacingX=W/(COLS+1),spacingY=H/(ROWS+1);
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const idx=r*COLS+c;
+        nX[idx]=spacingX*(c+1);
+        nY[idx]=spacingY*(r+1);
+        nCount++;
+      }
+    }
+    // edges: connect grid neighbors
+    for(let r=0;r<ROWS&&eCount<MAX_E;r++){
+      for(let c=0;c<COLS&&eCount<MAX_E;c++){
+        const idx=r*COLS+c;
+        if(c<COLS-1){eA[eCount]=idx;eB[eCount]=idx+1;eCount++}
+        if(r<ROWS-1){eA[eCount]=idx;eB[eCount]=idx+COLS;eCount++}
+      }
+    }
+  }
+
+  function fireSignals(ni){
+    nFlash[ni]=1.0;
+    for(let e=0;e<eCount;e++){
+      let t=-1;
+      if(eA[e]===ni)t=eB[e]; else if(eB[e]===ni)t=eA[e];
+      if(t>=0)signals.push({fx:nX[ni],fy:nY[ni],tx:nX[t],ty:nY[t],t:0,target:t});
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    initAudio();
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nCount;i++){
+      const dx=e.clientX-nX[i],dy=e.clientY-nY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<5000){nActive[best]=nActive[best]?0:1}
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;build()}
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.25)';
+    ctx.fillRect(0,0,W,H);
+
+    // beat logic
+    beatTimer++;
+    if(beatTimer>=BEAT_FRAMES){
+      beatTimer=0;
+      // fire active nodes in current column
+      for(let r=0;r<ROWS;r++){
+        const idx=r*COLS+playhead;
+        if(nActive[idx]){
+          fireSignals(idx);
+          playTone(r);
+        }
+      }
+      playhead=(playhead+1)%COLS;
+    }
+
+    // playhead line
+    const phX=nX[playhead];
+    if(phX){
+      ctx.fillStyle='rgba(212,160,23,0.06)';
+      ctx.fillRect(phX-W/(COLS+1)*0.5,0,W/(COLS+1),H);
+    }
+
+    // edges
+    ctx.beginPath();ctx.strokeStyle='rgba(130,130,150,0.06)';ctx.lineWidth=0.5;
+    for(let e=0;e<eCount;e++){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    ctx.stroke();
+
+    // nodes
+    for(let i=0;i<nCount;i++){
+      if(nFlash[i]>0)nFlash[i]-=0.02;
+      const col=i%COLS;
+      const dx=mouseX-nX[i],dy=mouseY-nY[i],d2=dx*dx+dy*dy;
+      const hover=d2<4000?0.2*(1-Math.sqrt(d2)/63):0;
+
+      if(nActive[i]){
+        // active node - gold
+        const bright=0.5+nFlash[i]*0.5+hover;
+        // glow
+        if(nFlash[i]>0.1){
+          ctx.fillStyle=`rgba(212,160,23,${nFlash[i]*0.3})`;
+          ctx.beginPath();ctx.arc(nX[i],nY[i],12,0,6.283);ctx.fill();
+        }
+        ctx.fillStyle=`rgba(212,160,23,${Math.min(1,bright)})`;
+        ctx.beginPath();ctx.arc(nX[i],nY[i],5,0,6.283);ctx.fill();
+      }else{
+        // inactive node - dim
+        ctx.fillStyle=`rgba(100,100,120,${0.2+hover+nFlash[i]*0.3})`;
+        ctx.beginPath();ctx.arc(nX[i],nY[i],3,0,6.283);ctx.fill();
+      }
+    }
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.04;
+      if(s.t>=1){signals.splice(i,1);continue}
+      const sx=s.fx+(s.tx-s.fx)*s.t,sy=s.fy+(s.ty-s.fy)*s.t;
+      ctx.fillStyle=`rgba(212,160,23,${0.6-s.t*0.5})`;
+      ctx.fillRect(sx-2,sy-2,4,4);
+    }
+
+    // cap signals
+    if(signals.length>200)signals.splice(0,signals.length-100);
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

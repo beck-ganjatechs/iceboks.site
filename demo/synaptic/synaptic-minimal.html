@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal Pulse — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Minimal Pulse</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H,cx,cy;
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;buildNetwork()}
+
+  const NODE_COUNT=60;
+  const MAX_EDGES=400;
+  let nodeX,nodeY,nodeCD,nodeAlpha;
+  let edgeA,edgeB,edgeCount=0;
+  let signals=[];
+  let mouseX=0,mouseY=0;
+
+  function buildNetwork(){
+    nodeX=new Float32Array(NODE_COUNT);
+    nodeY=new Float32Array(NODE_COUNT);
+    nodeCD=new Float32Array(NODE_COUNT);
+    nodeAlpha=new Float32Array(NODE_COUNT);
+    edgeA=new Uint8Array(MAX_EDGES);
+    edgeB=new Uint8Array(MAX_EDGES);
+    edgeCount=0;
+
+    const spacing=Math.min(W,H)*0.06;
+    let idx=0;
+    // center
+    nodeX[0]=cx;nodeY[0]=cy;nodeAlpha[0]=0.6;idx=1;
+    // 3 hex rings
+    const rings=[6,12,18,24];
+    for(let r=0;r<rings.length&&idx<NODE_COUNT;r++){
+      const count=rings[r];
+      const radius=spacing*(r+1);
+      for(let i=0;i<count&&idx<NODE_COUNT;i++){
+        const a=(Math.PI*2*i)/count - Math.PI/2;
+        nodeX[idx]=cx+Math.cos(a)*radius;
+        nodeY[idx]=cy+Math.sin(a)*radius;
+        nodeAlpha[idx]=0.6;
+        idx++;
+      }
+    }
+    // Build edges: connect each node to nearby nodes
+    const maxDist=spacing*1.6;
+    for(let i=0;i<NODE_COUNT&&edgeCount<MAX_EDGES;i++){
+      for(let j=i+1;j<NODE_COUNT&&edgeCount<MAX_EDGES;j++){
+        const dx=nodeX[i]-nodeX[j],dy=nodeY[i]-nodeY[j];
+        if(dx*dx+dy*dy<maxDist*maxDist){
+          edgeA[edgeCount]=i;edgeB[edgeCount]=j;edgeCount++;
+        }
+      }
+    }
+    signals=[];
+  }
+
+  function fireSignal(ni){
+    if(nodeCD[ni]>0)return;
+    nodeCD[ni]=120;
+    nodeAlpha[ni]=1.0;
+    for(let e=0;e<edgeCount;e++){
+      let target=-1;
+      if(edgeA[e]===ni)target=edgeB[e];
+      else if(edgeB[e]===ni)target=edgeA[e];
+      if(target>=0){
+        signals.push({fromX:nodeX[ni],fromY:nodeY[ni],toX:nodeX[target],toY:nodeY[target],t:0,target:target});
+      }
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<NODE_COUNT;i++){
+      const dx=e.clientX-nodeX[i],dy=e.clientY-nodeY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<2500)fireSignal(best);
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function animate(){
+    // trail fade
+    ctx.fillStyle='rgba(6,6,8,0.25)';
+    ctx.fillRect(0,0,W,H);
+
+    // edges
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(160,160,180,0.12)';
+    ctx.lineWidth=0.8;
+    for(let e=0;e<edgeCount;e++){
+      const ax=nodeX[edgeA[e]],ay=nodeY[edgeA[e]],bx=nodeX[edgeB[e]],by=nodeY[edgeB[e]];
+      // skip offscreen
+      if((ax<-50&&bx<-50)||(ax>W+50&&bx>W+50)||(ay<-50&&by<-50)||(ay>H+50&&by>H+50))continue;
+      ctx.moveTo(ax,ay);ctx.lineTo(bx,by);
+    }
+    ctx.stroke();
+
+    // nodes
+    for(let i=0;i<NODE_COUNT;i++){
+      if(nodeCD[i]>0){
+        nodeCD[i]--;
+        nodeAlpha[i]=0.2+0.1*(nodeCD[i]/120);
+      }else{
+        if(nodeAlpha[i]<0.6)nodeAlpha[i]+=0.005;
+      }
+      // mouse proximity glow
+      const dx=mouseX-nodeX[i],dy=mouseY-nodeY[i],d2=dx*dx+dy*dy;
+      let extra=d2<10000?0.3*(1-Math.sqrt(d2)/100):0;
+
+      const a=Math.min(1,nodeAlpha[i]+extra);
+      ctx.fillStyle=`rgba(200,200,210,${a})`;
+      ctx.fillRect(nodeX[i]-2,nodeY[i]-2,4,4);
+    }
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.03;
+      if(s.t>=1){
+        fireSignal(s.target);
+        signals.splice(i,1);
+        continue;
+      }
+      const sx=s.fromX+(s.toX-s.fromX)*s.t;
+      const sy=s.fromY+(s.toY-s.fromY)*s.t;
+      ctx.fillStyle=`rgba(212,160,23,${1-s.t*0.5})`;
+      ctx.fillRect(sx-3,sy-3,6,6);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();
+  addEventListener('resize',resize);
+  animate();
+})();
+</script>
+</body>
+</html>

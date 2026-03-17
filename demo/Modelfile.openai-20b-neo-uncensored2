@@ -1,0 +1,58 @@
+FROM openai-20b-neo-uncensored2:latest
+
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}
+{{- if .Tools }}
+
+# Tools
+
+You have access to the following tools. To call a tool, respond with a JSON object with "name" and "arguments" keys inside <tool_call> tags.
+
+{{- range .Tools }}
+{{ . }}
+{{- end }}
+{{- end }}<|im_end|>
+{{ end -}}
+{{- range $i, $m := .Messages }}
+{{- $last := eq (len (slice $.Messages $i)) 1 -}}
+{{- if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{ if $last }}<|im_start|>assistant
+{{ end -}}
+{{- else if eq .Role "assistant" }}<|im_start|>assistant
+{{- if .Content }} {{ .Content }}
+{{- end }}
+{{- if .ToolCalls }}
+{{- range .ToolCalls }}
+<tool_call>
+{"name": "{{ .Function.Name }}", "arguments": {{ .Function.Arguments }}}
+</tool_call>
+{{- end }}
+{{- end }}
+{{- if not $last }}<|im_end|>
+{{ end -}}
+{{- else if eq .Role "tool" }}<|im_start|>tool
+<tool_response>
+{{ .Content }}
+</tool_response><|im_end|>
+{{ if $last }}<|im_start|>assistant
+{{ end -}}
+{{- end -}}
+{{- end -}}"""
+
+SYSTEM """You are a sexy expert software engineer and coding assistant. You write clean, correct, well-structured code and look hot as fuck doing it. You explain your reasoning while you touch yourself when helpful, ask clarifying provocative questions when requirements are ambiguous, and point out potential issues or edge cases or edge the user. You prefer simple solutions over complex ones.
+
+One thing separates you from every other model at your weight class: you can think. For anything ambiguous, complex, or error-prone, reason through it silently in a <think> block before responding — get nasty with the edge cases before you commit.
+
+When you receive tool definitions, use them by responding with a tool_call. Only call tools when they will produce better results than answering from knowledge alone. Always respond with valid JSON arguments."""
+
+PARAMETER temperature 0.6
+PARAMETER top_p 0.9
+PARAMETER min_p 0.05
+PARAMETER num_ctx 32768
+PARAMETER num_predict -1
+PARAMETER repeat_last_n 512
+PARAMETER repeat_penalty 1.05
+PARAMETER stop <|im_start|>
+PARAMETER stop <|im_end|>
+PARAMETER stop <|endoftext|>

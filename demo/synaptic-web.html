@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synaptic Web — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: crosshair; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back">← iceboks.site</a>
+<div class="title">Synaptic Web</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, mx = -9999, my = -9999, t = 0;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; buildNetwork(); }
+
+const nodes = [];
+const edges = [];
+const signals = [];
+
+function buildNetwork() {
+  nodes.length = 0;
+  edges.length = 0;
+  signals.length = 0;
+
+  const spacing = Math.min(W, H) * 0.08;
+  // Center node
+  nodes.push({ x: cx, y: cy, energy: 0.3, fatigue: 0, cooldown: 0, ring: 0 });
+
+  // Hexagonal rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = ring * spacing;
+    const count = ring * 6;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+      // Hex grid approximation
+      const seg = Math.floor(i / ring);
+      const pos = i % ring;
+      let nx, ny;
+      if (ring <= 3) {
+        nx = cx + r * Math.cos(angle);
+        ny = cy + r * Math.sin(angle);
+      } else {
+        nx = cx + r * Math.cos(angle);
+        ny = cy + r * Math.sin(angle);
+      }
+      if (nx > 20 && nx < W - 20 && ny > 40 && ny < H - 40) {
+        nodes.push({ x: nx, y: ny, energy: 0.2, fatigue: 0, cooldown: 0, ring: ring });
+      }
+    }
+  }
+
+  // Build edges: connect nearby nodes
+  const maxDist = spacing * 1.3;
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
+      if (d < maxDist) {
+        edges.push({ a: i, b: j, pulse: 0 });
+      }
+    }
+  }
+}
+
+resize();
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+addEventListener('click', e => {
+  // Find nearest node and fire signal
+  let closest = -1, closestD = Infinity;
+  for (let i = 0; i < nodes.length; i++) {
+    const d = Math.hypot(nodes[i].x - e.clientX, nodes[i].y - e.clientY);
+    if (d < closestD) { closestD = d; closest = i; }
+  }
+  if (closest >= 0 && closestD < 80) {
+    fireNode(closest);
+  }
+});
+
+function fireNode(idx) {
+  const node = nodes[idx];
+  if (node.cooldown > 0) return;
+  node.energy = 1;
+  node.fatigue += 0.25;
+  if (node.fatigue >= 1) {
+    node.cooldown = 200; // frames of darkness
+    node.fatigue = 1;
+  }
+  // Propagate to connected nodes with delay
+  for (const e of edges) {
+    let neighbor = -1;
+    if (e.a === idx) neighbor = e.b;
+    else if (e.b === idx) neighbor = e.a;
+    if (neighbor >= 0) {
+      signals.push({
+        from: idx, to: neighbor, edge: e,
+        progress: 0, speed: 0.03 + Math.random() * 0.02
+      });
+      e.pulse = 1;
+    }
+  }
+}
+
+// Background sacred geometry
+function drawBgGeometry() {
+  ctx.save();
+  const r = Math.min(W, H) * 0.4;
+  const alpha = 0.015 + Math.sin(t * 0.005) * 0.005;
+  ctx.strokeStyle = `rgba(180,190,210,${alpha})`;
+  ctx.lineWidth = 0.4;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3 + t * 0.001;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function animate() {
+  ctx.fillStyle = 'rgba(6,6,8,0.15)';
+  ctx.fillRect(0, 0, W, H);
+  t++;
+
+  drawBgGeometry();
+
+  // Update nodes
+  for (const n of nodes) {
+    n.energy *= 0.97;
+    n.fatigue = Math.max(0, n.fatigue - 0.0005);
+    if (n.cooldown > 0) {
+      n.cooldown--;
+      if (n.cooldown === 0) n.fatigue = 0.3;
+    }
+    // Mouse proximity glow
+    const md = Math.hypot(n.x - mx, n.y - my);
+    if (md < 120) {
+      n.energy = Math.max(n.energy, (1 - md / 120) * 0.5);
+    }
+  }
+
+  // Update signals
+  for (let i = signals.length - 1; i >= 0; i--) {
+    const s = signals[i];
+    s.progress += s.speed;
+    if (s.progress >= 1) {
+      fireNode(s.to);
+      signals.splice(i, 1);
+    }
+  }
+
+  // Draw edges
+  for (const e of edges) {
+    const a = nodes[e.a], b = nodes[e.b];
+    e.pulse *= 0.96;
+    const baseAlpha = 0.06;
+    const alpha = baseAlpha + e.pulse * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = e.pulse > 0.1
+      ? `rgba(212,160,23,${alpha})`
+      : `rgba(100,110,130,${alpha})`;
+    ctx.lineWidth = 0.5 + e.pulse * 2;
+    ctx.stroke();
+  }
+
+  // Draw signals traveling along edges
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of signals) {
+    const a = nodes[s.from], b = nodes[s.to];
+    const x = a.x + (b.x - a.x) * s.progress;
+    const y = a.y + (b.y - a.y) * s.progress;
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, 8);
+    grad.addColorStop(0, 'rgba(240,192,64,0.8)');
+    grad.addColorStop(0.5, 'rgba(100,220,255,0.3)');
+    grad.addColorStop(1, 'rgba(100,220,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - 8, y - 8, 16, 16);
+  }
+  ctx.restore();
+
+  // Draw nodes
+  for (const n of nodes) {
+    const isDark = n.cooldown > 0;
+    const brightness = isDark ? 0.05 : (0.15 + n.energy * 0.85);
+    const r = isDark ? 2 : (3 + n.energy * 3);
+
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    if (isDark) {
+      ctx.fillStyle = `rgba(40,40,50,${brightness})`;
+    } else if (n.energy > 0.3) {
+      ctx.fillStyle = `rgba(212,160,23,${brightness})`;
+    } else {
+      ctx.fillStyle = `rgba(180,200,230,${brightness})`;
+    }
+    ctx.fill();
+
+    // Glow for active nodes
+    if (n.energy > 0.4 && !isDark) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r + 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(212,160,23,${n.energy * 0.15})`;
+      ctx.fill();
+    }
+  }
+
+  // Random spontaneous firing
+  if (Math.random() < 0.005) {
+    const idx = Math.floor(Math.random() * nodes.length);
+    fireNode(idx);
+  }
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

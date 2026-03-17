@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velvet Drape — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: crosshair; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+  .hint { position: fixed; top: 2rem; right: 2rem; z-index: 10; font-family: Georgia, serif; font-size: 0.65rem; color: rgba(255,200,160,0.25); letter-spacing: 0.15em; text-transform: uppercase; pointer-events: none; transition: opacity 2s; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">← iceboks.site</a>
+<div class="title">Velvet Drape</div>
+<div class="hint" id="hint">move mouse to caress the fabric</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, mx = 0, my = 0, pmx = 0, pmy = 0;
+let time = 0;
+
+function resize() {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+  initCloth();
+}
+
+// --- Silhouette: abstract feminine figure as bezier collision boundary ---
+function getSilhouettePoints(t) {
+  const cx = W * 0.5;
+  const top = H * 0.08;
+  const bot = H * 0.95;
+  const scale = Math.min(W, H) / 900;
+  const s = scale;
+  const breathe = Math.sin(t * 0.4) * 2 * s;
+
+  // Points defining one side of the silhouette (right side, will mirror)
+  // head, neck, shoulder, bust, waist, hip, thigh, knee, calf, ankle
+  return [
+    // Top of head
+    { x: cx, y: top },
+    // Head right
+    { x: cx + 28 * s, y: top + 20 * s },
+    { x: cx + 35 * s, y: top + 50 * s },
+    // Neck
+    { x: cx + 18 * s, y: top + 85 * s },
+    { x: cx + 16 * s, y: top + 105 * s },
+    // Shoulder
+    { x: cx + 65 * s + breathe, y: top + 125 * s },
+    { x: cx + 80 * s + breathe, y: top + 135 * s },
+    // Upper arm hint
+    { x: cx + 75 * s + breathe * 0.5, y: top + 175 * s },
+    // Bust
+    { x: cx + 82 * s + breathe * 1.5, y: top + 210 * s },
+    { x: cx + 88 * s + breathe * 2, y: top + 240 * s },
+    { x: cx + 80 * s + breathe * 1.8, y: top + 265 * s },
+    // Ribcage
+    { x: cx + 60 * s + breathe, y: top + 295 * s },
+    // Waist
+    { x: cx + 45 * s, y: top + 340 * s },
+    { x: cx + 42 * s, y: top + 360 * s },
+    // Hip
+    { x: cx + 70 * s + breathe * 0.5, y: top + 400 * s },
+    { x: cx + 90 * s + breathe, y: top + 430 * s },
+    { x: cx + 95 * s + breathe * 1.2, y: top + 460 * s },
+    // Upper thigh
+    { x: cx + 85 * s, y: top + 510 * s },
+    { x: cx + 70 * s, y: top + 560 * s },
+    // Knee
+    { x: cx + 58 * s, y: top + 610 * s },
+    { x: cx + 55 * s, y: top + 640 * s },
+    // Calf
+    { x: cx + 60 * s, y: top + 690 * s },
+    { x: cx + 58 * s, y: top + 720 * s },
+    // Ankle
+    { x: cx + 42 * s, y: top + 770 * s },
+    // Foot
+    { x: cx + 48 * s, y: top + 790 * s },
+    { x: cx + 30 * s, y: bot },
+  ];
+}
+
+function getMirroredSilhouette(pts) {
+  const cx = W * 0.5;
+  const mirrored = pts.map(p => ({ x: cx - (p.x - cx), y: p.y })).reverse();
+  return [...pts, ...mirrored];
+}
+
+// Distance from point to the nearest silhouette edge segment
+function distToSilhouette(px, py, silhouette) {
+  let minDist = Infinity;
+  let closestNx = 0, closestNy = 0;
+  for (let i = 0; i < silhouette.length; i++) {
+    const a = silhouette[i];
+    const b = silhouette[(i + 1) % silhouette.length];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) continue;
+    let t = ((px - a.x) * dx + (py - a.y) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a.x + t * dx, cy = a.y + t * dy;
+    const ex = px - cx, ey = py - cy;
+    const d = Math.sqrt(ex * ex + ey * ey);
+    if (d < minDist) {
+      minDist = d;
+      if (d > 0) { closestNx = ex / d; closestNy = ey / d; }
+    }
+  }
+  return { dist: minDist, nx: closestNx, ny: closestNy };
+}
+
+function isInsideSilhouette(px, py, silhouette) {
+  let inside = false;
+  for (let i = 0, j = silhouette.length - 1; i < silhouette.length; j = i++) {
+    const xi = silhouette[i].x, yi = silhouette[i].y;
+    const xj = silhouette[j].x, yj = silhouette[j].y;
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// --- Cloth simulation (Verlet) ---
+const COLS = 70;
+const ROWS = 90;
+const SPACING_BASE = 7;
+let cloth = [];
+let constraints = [];
+
+class Point {
+  constructor(x, y, pinned) {
+    this.x = x; this.y = y;
+    this.ox = x; this.oy = y;
+    this.pinned = pinned;
+    this.mass = 1;
+    this.caught = false;
+    this.caughtStrength = 0;
+  }
+}
+
+function initCloth() {
+  cloth = [];
+  constraints = [];
+  const spacing = Math.max(5, Math.min(SPACING_BASE, W / COLS * 0.9));
+  const startX = W * 0.5 - (COLS * spacing) / 2;
+  const startY = -spacing * 2;
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x = startX + c * spacing;
+      const y = startY + r * spacing;
+      const pinned = r === 0;
+      cloth.push(new Point(x, y, pinned));
+    }
+  }
+
+  // Horizontal constraints
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 1; c++) {
+      constraints.push({ a: r * COLS + c, b: r * COLS + c + 1, len: spacing });
+    }
+  }
+  // Vertical constraints
+  for (let r = 0; r < ROWS - 1; r++) {
+    for (let c = 0; c < COLS; c++) {
+      constraints.push({ a: r * COLS + c, b: (r + 1) * COLS + c, len: spacing });
+    }
+  }
+}
+
+function updateCloth(silhouette) {
+  const gravity = 0.18;
+  const friction = 0.992;
+  const mouseRadius = 60;
+  const mouseForce = 0.6;
+  const mdx = mx - pmx, mdy = my - pmy;
+
+  // Verlet integration
+  for (const p of cloth) {
+    if (p.pinned) {
+      // Pin points sway gently
+      p.x = p.x + Math.sin(time * 0.3 + p.x * 0.01) * 0.15;
+      continue;
+    }
+
+    let vx = (p.x - p.ox) * friction;
+    let vy = (p.y - p.oy) * friction;
+
+    // Mouse interaction
+    const dx = p.x - mx, dy = p.y - my;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < mouseRadius && dist > 0) {
+      const force = (1 - dist / mouseRadius) * mouseForce;
+      vx += mdx * force;
+      vy += mdy * force;
+    }
+
+    p.ox = p.x;
+    p.oy = p.y;
+    p.x += vx;
+    p.y += vy + gravity;
+
+    // Subtle wind
+    p.x += Math.sin(time * 0.2 + p.y * 0.008) * 0.12;
+  }
+
+  // Constraint relaxation
+  for (let iter = 0; iter < 5; iter++) {
+    for (const c of constraints) {
+      const a = cloth[c.a], b = cloth[c.b];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist === 0) continue;
+      const diff = (dist - c.len) / dist * 0.5;
+      const ox = dx * diff, oy = dy * diff;
+      if (!a.pinned) { a.x += ox; a.y += oy; }
+      if (!b.pinned) { b.x -= ox; b.y -= oy; }
+    }
+
+    // Collision with silhouette
+    for (const p of cloth) {
+      if (p.pinned) continue;
+      const inside = isInsideSilhouette(p.x, p.y, silhouette);
+      if (inside) {
+        const { dist, nx, ny } = distToSilhouette(p.x, p.y, silhouette);
+        // Push out
+        p.x += nx * (dist + 1.5);
+        p.y += ny * (dist + 1.5);
+        // Friction on surface - cloth catches
+        const vx = p.x - p.ox, vy = p.y - p.oy;
+        p.ox = p.x - vx * 0.3;
+        p.oy = p.y - vy * 0.3;
+        p.caught = true;
+        p.caughtStrength = Math.min(1, p.caughtStrength + 0.05);
+      } else {
+        // Near surface - slight friction/attraction for draping
+        const { dist: d2 } = distToSilhouette(p.x, p.y, silhouette);
+        if (d2 < 12) {
+          const vx = p.x - p.ox, vy = p.y - p.oy;
+          const damping = 0.7 + 0.3 * (d2 / 12);
+          p.ox = p.x - vx * damping;
+          p.oy = p.y - vy * damping;
+          p.caught = true;
+          p.caughtStrength = Math.min(1, p.caughtStrength + 0.02);
+        } else {
+          p.caughtStrength *= 0.995;
+          if (p.caughtStrength < 0.01) p.caught = false;
+        }
+      }
+    }
+  }
+}
+
+// --- Rendering ---
+function drawSilhouette(silhouette) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(silhouette[0].x, silhouette[0].y);
+  for (let i = 1; i < silhouette.length; i++) {
+    const prev = silhouette[i - 1];
+    const curr = silhouette[i];
+    const cpx = (prev.x + curr.x) / 2;
+    const cpy = (prev.y + curr.y) / 2;
+    ctx.quadraticCurveTo(prev.x, prev.y, cpx, cpy);
+  }
+  ctx.closePath();
+
+  // Soft warm glow body
+  const grad = ctx.createLinearGradient(W * 0.35, 0, W * 0.65, H);
+  grad.addColorStop(0, 'rgba(180, 120, 80, 0.06)');
+  grad.addColorStop(0.3, 'rgba(200, 140, 90, 0.08)');
+  grad.addColorStop(0.6, 'rgba(180, 110, 70, 0.06)');
+  grad.addColorStop(1, 'rgba(160, 100, 60, 0.04)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Subtle edge glow
+  ctx.strokeStyle = 'rgba(212, 160, 80, 0.07)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCloth() {
+  // Draw mesh fabric as triangles with varying opacity
+  for (let r = 0; r < ROWS - 1; r++) {
+    for (let c = 0; c < COLS - 1; c++) {
+      const i = r * COLS + c;
+      const a = cloth[i];
+      const b = cloth[i + 1];
+      const d = cloth[i + COLS];
+      const e = cloth[i + COLS + 1];
+
+      // Skip if points are too far apart (torn)
+      const maxStretch = 25;
+      const dx1 = b.x - a.x, dy1 = b.y - a.y;
+      const dx2 = d.x - a.x, dy2 = d.y - a.y;
+      if (dx1 * dx1 + dy1 * dy1 > maxStretch * maxStretch) continue;
+      if (dx2 * dx2 + dy2 * dy2 > maxStretch * maxStretch) continue;
+
+      // Depth/fold shading
+      const cross1 = dx1 * dy2 - dy1 * dx2;
+      const fold = Math.abs(cross1) / 200;
+      const depth = Math.min(1, fold);
+
+      // Caught-on-curves glow
+      const caughtAvg = (a.caughtStrength + b.caughtStrength + d.caughtStrength) / 3;
+
+      // Color: deep wine/burgundy mesh with gold caught highlights
+      const baseR = 90 + depth * 40;
+      const baseG = 20 + depth * 15 + caughtAvg * 80;
+      const baseB = 40 + depth * 20;
+      const alpha = 0.15 + depth * 0.25 + caughtAvg * 0.15;
+
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(d.x, d.y);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${baseR|0}, ${baseG|0}, ${baseB|0}, ${alpha.toFixed(3)})`;
+      ctx.fill();
+
+      // Second triangle
+      const dx3 = e.x - b.x, dy3 = e.y - b.y;
+      if (dx3 * dx3 + dy3 * dy3 > maxStretch * maxStretch) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(e.x, e.y);
+      ctx.lineTo(d.x, d.y);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${baseR|0}, ${baseG|0}, ${baseB|0}, ${(alpha * 0.9).toFixed(3)})`;
+      ctx.fill();
+    }
+  }
+
+  // Draw mesh lines for fabric texture
+  ctx.lineWidth = 0.4;
+  // Horizontal threads
+  for (let r = 0; r < ROWS; r += 2) {
+    ctx.beginPath();
+    for (let c = 0; c < COLS; c++) {
+      const p = cloth[r * COLS + c];
+      if (c === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    const caughtLine = cloth.slice(r * COLS, r * COLS + COLS).reduce((s, p) => s + p.caughtStrength, 0) / COLS;
+    ctx.strokeStyle = `rgba(${180 + caughtLine * 60 | 0}, ${100 + caughtLine * 80 | 0}, ${60 + caughtLine * 40 | 0}, ${0.08 + caughtLine * 0.15})`;
+    ctx.stroke();
+  }
+  // Vertical threads
+  for (let c = 0; c < COLS; c += 2) {
+    ctx.beginPath();
+    for (let r = 0; r < ROWS; r++) {
+      const p = cloth[r * COLS + c];
+      if (r === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    const caughtLine = Array.from({ length: ROWS }, (_, r) => cloth[r * COLS + c].caughtStrength).reduce((a, b) => a + b, 0) / ROWS;
+    ctx.strokeStyle = `rgba(${180 + caughtLine * 60 | 0}, ${100 + caughtLine * 80 | 0}, ${60 + caughtLine * 40 | 0}, ${0.06 + caughtLine * 0.12})`;
+    ctx.stroke();
+  }
+}
+
+function drawAmbientGlow() {
+  // Warm ambient light
+  const grd = ctx.createRadialGradient(W * 0.5, H * 0.35, 0, W * 0.5, H * 0.35, H * 0.7);
+  grd.addColorStop(0, 'rgba(200, 130, 60, 0.03)');
+  grd.addColorStop(0.5, 'rgba(150, 80, 40, 0.015)');
+  grd.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Floating particles
+const particles = [];
+function initParticles() {
+  for (let i = 0; i < 40; i++) {
+    particles.push({
+      x: Math.random() * 2000,
+      y: Math.random() * 2000,
+      r: Math.random() * 1.5 + 0.3,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: -Math.random() * 0.4 - 0.1,
+      alpha: Math.random() * 0.3 + 0.05,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+}
+initParticles();
+
+function drawParticles() {
+  for (const p of particles) {
+    p.x += p.vx + Math.sin(time * 0.1 + p.phase) * 0.2;
+    p.y += p.vy;
+    if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+    if (p.x < -10) p.x = W + 10;
+    if (p.x > W + 10) p.x = -10;
+
+    const flicker = 0.7 + 0.3 * Math.sin(time * 0.3 + p.phase);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(212, 170, 80, ${p.alpha * flicker})`;
+    ctx.fill();
+  }
+}
+
+// --- Main loop ---
+let lastTime = 0;
+function animate(ts) {
+  const dt = Math.min(32, ts - lastTime);
+  lastTime = ts;
+  time += dt * 0.01;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  drawAmbientGlow();
+
+  // Get silhouette
+  const rightSide = getSilhouettePoints(time);
+  const silhouette = getMirroredSilhouette(rightSide);
+
+  // Draw body silhouette
+  drawSilhouette(silhouette);
+
+  // Update and draw cloth
+  updateCloth(silhouette);
+  drawCloth();
+
+  // Particles
+  drawParticles();
+
+  pmx = mx;
+  pmy = my;
+
+  requestAnimationFrame(animate);
+}
+
+// --- Events ---
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+addEventListener('touchmove', e => { e.preventDefault(); mx = e.touches[0].clientX; my = e.touches[0].clientY; }, { passive: false });
+
+// Fade hint
+setTimeout(() => { document.getElementById('hint').style.opacity = '0'; }, 4000);
+
+resize();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

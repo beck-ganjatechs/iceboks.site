@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The SSH Heist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #00ff88;
+    --green-light: #33ffaa;
+    --green-dim: #007744;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(0, 255, 136, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(0, 255, 136, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(0, 255, 136, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(0, 255, 136, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(0, 255, 136, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE (for key moments) === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(0, 255, 136, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  .big-quote .attribution {
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    font-style: normal;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(0, 255, 136, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(0, 255, 136, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(0, 255, 136, 0.04);
+    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 136, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(0, 255, 136, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(0, 255, 136, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<!-- DESKTOP NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Setup</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">No Shell, No Fix</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">Recon</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">Lateral Movement</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Pivot</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">The Real Culprit</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">Post-Quantum vs. VPN</span><span class="dot"></span></a>
+  <a href="#ch8"><span class="nav-label">Victory Lap</span><span class="dot"></span></a>
+  <a href="#ch9"><span class="nav-label">Lessons Learned</span><span class="dot"></span></a>
+  <a href="#ch10"><span class="nav-label">Timeline</span><span class="dot"></span></a>
+</nav>
+
+<!-- MOBILE NAV -->
+<button class="mobile-nav-toggle" id="mobileToggle" onclick="document.getElementById('mobileMenu').classList.toggle('open')">NAV</button>
+<div class="mobile-nav" id="mobileMenu">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Setup</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. No Shell, No Fix</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. Recon</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. Lateral Movement</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Pivot</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. The Real Culprit</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. Post-Quantum vs. VPN</a>
+  <a href="#ch8" onclick="this.parentElement.classList.remove('open')">VIII. Victory Lap</a>
+  <a href="#ch9" onclick="this.parentElement.classList.remove('open')">IX. Lessons Learned</a>
+  <a href="#ch10" onclick="this.parentElement.classList.remove('open')">X. Timeline</a>
+</div>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="hero">
+  <div class="hero-title">The SSH<br>Heist</div>
+  <div class="hero-subtitle">How We Broke Back Into Our Own Server Using n8n, Playwright, and Post-Quantum Cryptography Ignorance</div>
+  <div class="hero-byline">March 14, 2026 &mdash; iceboks + Claude</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ==================== CONTENT ==================== -->
+<main class="content">
+
+<!-- ===== CHAPTER I ===== -->
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Setup</h2>
+  </div>
+
+  <p>It started innocently enough.</p>
+
+  <p>"Can you check the server."</p>
+
+  <p>A ping to <code>192.168.192.52</code> &mdash; the home lab beast sitting on a ZeroTier virtual network, running Ollama, LiquidBrain, n8n, MinIO, ComfyUI, PostgreSQL, and about a dozen other services. The kind of box that runs hot and does everything.</p>
+
+  <p>SSH was dead. Not "connection refused" dead. Not "timeout" dead. The sneaky kind of dead &mdash; where the connection <em>starts</em>, the handshake <em>begins</em>, and then... silence. The server closes the connection mid-key-exchange without a word.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">ssh debug output</div>
+    <pre>debug1: expecting SSH2_MSG_KEX_ECDH_REPLY
+Connection closed by 192.168.192.52 port 22</pre>
+  </div>
+
+  <p>First instinct: fail2ban. We'd been hammering the box. The symptoms fit. But we were wrong.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER II ===== -->
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">No Shell, No Fix</h2>
+  </div>
+
+  <p>The fundamental catch-22 of remote server administration: <strong>you need SSH to fix SSH</strong>.</p>
+
+  <p>The server was 1,000+ miles away. No IPMI. No KVM. No one on-site to restart sshd. No Cockpit or Webmin running.</p>
+
+  <div class="big-quote">Just a locked door and a bunch of services still happily running behind it.</div>
+
+  <p>Every tool in the standard playbook required the one thing we didn't have &mdash; a shell. We could see the server on the network. We could ping it. We could watch its services respond to HTTP requests. But we couldn't <em>talk</em> to it. Not in any way that mattered.</p>
+
+  <p>The clock was ticking. Not because anything was on fire, but because the longer SSH stayed broken, the more likely we were to compound the problem by trying things that would make it worse. Every failed connection attempt was another data point the server could use against us.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER III ===== -->
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">Recon</h2>
+  </div>
+
+  <p>An nmap scan revealed the attack surface:</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Port</th><th>Service</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>22</td><td>SSH</td><td>Broken</td></tr>
+      <tr><td>80/443</td><td>Nginx</td><td>Redirect loop</td></tr>
+      <tr><td>5678</td><td>n8n v2.9.4</td><td>Wide open</td></tr>
+      <tr><td>7777</td><td>LiquidBrain</td><td>Running</td></tr>
+      <tr><td>8080</td><td>Custom API</td><td>Running</td></tr>
+      <tr><td>9001</td><td>MinIO Console</td><td>Running</td></tr>
+      <tr><td>11434</td><td>Ollama</td><td>Running</td></tr>
+      <tr><td>5432</td><td>PostgreSQL</td><td>Auth required</td></tr>
+    </tbody>
+  </table>
+
+  <p>Everything was alive <em>except</em> the one thing we needed.</p>
+
+  <p>Then we spotted it: <strong>n8n</strong> &mdash; the workflow automation tool &mdash; sitting on port 5678, accessible through a Cloudflare tunnel at <code>n8n.americannex.com</code>. n8n has an SSH node. If we could log in, we could use n8n to SSH from the server to <em>itself</em> and run commands.</p>
+
+  <div class="pull-quote">A workflow automation tool with SSH capabilities, accessible from the public internet. Our way back in was hiding in plain sight.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER IV ===== -->
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">Lateral Movement</h2>
+  </div>
+
+  <p>We drove Playwright &mdash; a browser automation framework &mdash; directly into the n8n web interface. Navigated to the login page, authenticated, and started building a workflow.</p>
+
+  <p><strong>Attempt 1: Code Node</strong></p>
+
+  <p>First we tried the Code node with a shell command. n8n sandboxes its Code node &mdash; no raw Node.js modules allowed. Fair play, n8n. Fair play.</p>
+
+  <p><strong>Attempt 2: SSH Node to localhost</strong></p>
+
+  <p>We added an SSH node, configured credentials to connect to the server's LAN IP (<code>10.0.0.43</code>) from n8n's container network, and pointed it at <code>fail2ban-client set sshd unbanip 192.168.192.199</code>.</p>
+
+  <p>It "executed successfully." SSH still dead.</p>
+
+  <p><strong>Attempt 3: The n8n UI Fight</strong></p>
+
+  <p>The n8n interface was fighting us. A broken node sat between the trigger and SSH node, eating the data flow. Output panels showed nothing. Sessions expired mid-operation. We were driving a browser through Playwright, clicking accessibility tree refs, wrestling with dialog modals.</p>
+
+  <div class="pull-quote">It was getting ugly. We were automating a browser to automate a workflow engine to automate an SSH connection to fix the SSH connection we couldn't make directly. Three layers of indirection deep and sinking.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER V ===== -->
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Pivot</h2>
+  </div>
+
+  <p>We abandoned the UI. Went to n8n's settings, created an API key, and started driving everything through REST calls.</p>
+
+  <p>First, we created a clean workflow via the API &mdash; just a webhook trigger wired directly to an SSH node. No broken nodes in between. Activated it. Hit the webhook URL:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">terminal</div>
+    <pre>curl 'https://n8n.americannex.com/webhook/ssh-diag-run'</pre>
+  </div>
+
+  <p>And for the first time, we got <strong>actual output from the server</strong>:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">server response</div>
+    <pre>Timeout before authentication for connection from 192.168.192.199
+srclimit_penalise: ipv4: new 192.168.192.199/32 deferred penalty of 10 seconds</pre>
+  </div>
+
+  <div class="big-quote">A webhook shell. We'd built a web-accessible command executor out of a workflow automation tool's SSH node and a webhook trigger. Crude. Effective. Terrifying from a security perspective.
+    <span class="attribution">The moment everything changed</span>
+  </div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VI ===== -->
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">The Real Culprit</h2>
+  </div>
+
+  <p>OpenSSH 10 introduced <strong>PerSourcePenalties</strong> &mdash; a built-in rate limiter that penalizes IPs with repeated authentication failures. Our IP had been accumulating penalties from every failed SSH attempt we'd made during debugging. The server was deliberately delaying and dropping our connections.</p>
+
+  <p>It was never fail2ban. It was SSH itself, punishing us for trying to fix it.</p>
+
+  <p>We disabled it via the webhook shell and restarted sshd.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">webhook shell</div>
+    <pre># Disable PerSourcePenalties
+# Restart sshd
+# Check status</pre>
+  </div>
+
+  <p>Still broken.</p>
+
+  <p>We checked iptables. Found Kubernetes's kube-router had set the INPUT chain to <code>policy DROP</code> with its own netpol rules. Added explicit ACCEPT rules for the ZeroTier subnet.</p>
+
+  <p>Still broken.</p>
+
+  <div class="pull-quote">Two hypotheses down. Each one plausible. Each one wrong. The real answer was hiding in a place we hadn't thought to look yet &mdash; the cryptographic handshake itself.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VII ===== -->
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">Post-Quantum vs. VPN</h2>
+  </div>
+
+  <p>After exhausting every firewall and ban theory, we tried something different:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">terminal</div>
+    <pre>ssh -o KexAlgorithms=curve25519-sha256 192.168.192.52 "echo WORKS"</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-header">output</div>
+    <pre>WORKS</pre>
+  </div>
+
+  <div class="big-quote">One flag. That's all it took.
+    <span class="attribution">The climax</span>
+  </div>
+
+  <p><strong>OpenSSH 10 defaults to <code>sntrup761x25519-sha512</code></strong> &mdash; a post-quantum hybrid key exchange algorithm. It's the future of cryptography. It's also <em>large</em>. The initial key exchange packets are ~1.5KB, which is fine on regular networks but gets fragmented traversing ZeroTier's tunnel. The fragments were getting silently dropped, causing the handshake to hang at <code>SSH2_MSG_KEX_ECDH_REPLY</code> indefinitely.</p>
+
+  <p>The classic <code>curve25519-sha256</code> produces smaller packets that fit cleanly through the tunnel.</p>
+
+  <p><strong>The fix:</strong></p>
+
+  <div class="code-block">
+    <div class="code-block-header">~/.ssh/config</div>
+    <pre>Host 192.168.192.52
+  KexAlgorithms curve25519-sha256</pre>
+  </div>
+
+  <p>Permanent. Clean. One line.</p>
+
+  <p>We went through fail2ban, PerSourcePenalties, iptables INPUT rules, OUTPUT rules, kube-router netpol, conntrack, and UFW &mdash; all dead ends. The actual fix was one line in SSH config. The diagnosis was harder than the cure.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VIII ===== -->
+<article class="chapter" id="ch8">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VIII</div>
+    <h2 class="chapter-title">Victory Lap</h2>
+  </div>
+
+  <p>With SSH restored, we went further &mdash; setting up a full ZeroTier bridge to the home LAN (<code>10.0.0.0/24</code>).</p>
+
+  <p><strong>Server side</strong> (persistent via UFW):</p>
+
+  <div class="code-block">
+    <div class="code-block-header">network configuration</div>
+    <pre># NAT masquerade between ZeroTier and LAN interfaces
+# Forwarding rules between ztwfufk6e4 and enp14s0
+# ZeroTier subnet accept in input chain</pre>
+  </div>
+
+  <p><strong>Network side</strong> (auto-pushed to all devices):</p>
+
+  <div class="code-block">
+    <div class="code-block-header">zerotier central</div>
+    <pre># Managed route: 10.0.0.0/24 via 192.168.192.52
+# Pushed to all ZeroTier members automatically</pre>
+  </div>
+
+  <p>Now every device on the ZeroTier network &mdash; phone, tablet, laptop, wherever in the world &mdash; can reach every device on the home LAN.</p>
+
+  <div class="mic-drop">From locked out to full LAN bridge in one hour.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER IX ===== -->
+<article class="chapter" id="ch9">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IX</div>
+    <h2 class="chapter-title">Lessons Learned</h2>
+  </div>
+
+  <ol class="opt-list">
+    <li><strong>Post-quantum crypto is here and it breaks things.</strong> OpenSSH 10's default kex algorithm produces packets too large for some VPN tunnels. If SSH hangs during key exchange over a tunnel, force <code>curve25519-sha256</code> before blaming the firewall.</li>
+    <li><strong>n8n is a legitimate remote access tool.</strong> If you have n8n running with SSH credentials configured, you have a web-accessible shell. With the webhook pattern, you can even script it from curl. Secure accordingly.</li>
+    <li><strong>The diagnosis was harder than the fix.</strong> We went through fail2ban, PerSourcePenalties, iptables INPUT rules, OUTPUT rules, kube-router netpol, conntrack, and UFW &mdash; all dead ends. The actual fix was one line in SSH config. The attack surface analysis, lateral movement through n8n, and systematic elimination of hypotheses is what got us there.</li>
+    <li><strong>Always have a second way in.</strong> If SSH is your only remote access, you're one misconfiguration away from a drive to the data center. n8n, Cockpit, Tailscale, WireGuard, a webhook-triggered script &mdash; have <em>something</em> else running.</li>
+    <li><strong>Red-team your own infrastructure.</strong> We found that n8n was accessible through Cloudflare with full admin access. The SSH node could run arbitrary commands as a user with sudo. MinIO's console was exposed. PostgreSQL was listening on all interfaces. This was a fun exercise. It would not be fun if someone else did it first.</li>
+  </ol>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER X ===== -->
+<article class="chapter" id="ch10">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter X</div>
+    <h2 class="chapter-title">Timeline</h2>
+  </div>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Time</th><th>Event</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0:00</td><td>"Can you check the server"</td></tr>
+      <tr><td>0:02</td><td>SSH dead. Ollama alive.</td></tr>
+      <tr><td>0:05</td><td>fail2ban hypothesis</td></tr>
+      <tr><td>0:08</td><td>Port scan reveals n8n on 5678</td></tr>
+      <tr><td>0:12</td><td>Playwright navigates to n8n login</td></tr>
+      <tr><td>0:15</td><td>Code node blocked by sandbox</td></tr>
+      <tr><td>0:20</td><td>SSH node configured, UI fight begins</td></tr>
+      <tr><td>0:35</td><td>Session expires mid-operation</td></tr>
+      <tr><td>0:40</td><td>API key created, webhook shell built</td></tr>
+      <tr><td>0:42</td><td>First server output: PerSourcePenalties logs</td></tr>
+      <tr><td>0:45</td><td>Penalties disabled, sshd restarted &mdash; still broken</td></tr>
+      <tr><td>0:48</td><td>iptables rules added &mdash; still broken</td></tr>
+      <tr><td>0:50</td><td>KexAlgorithms curve25519-sha256 &mdash; WE'RE IN</td></tr>
+      <tr><td>0:55</td><td>ZeroTier bridge configured</td></tr>
+      <tr><td>1:00</td><td>Managed route pushed to all devices</td></tr>
+    </tbody>
+  </table>
+
+  <div class="big-quote">Total time from lockout to full LAN bridge: ~1 hour.</div>
+</article>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <p>Tools used: nmap, curl, Playwright, n8n (SSH node + webhook + REST API), OpenSSH, iptables, UFW, ZeroTier Central</p>
+  <p><em>Root cause: Post-quantum key exchange algorithm packet size exceeding VPN tunnel MTU</em></p>
+  <p>Damage: None. Pride: Restored.</p>
+</footer>
+
+</main>
+
+<script>
+// === NETWORK CANVAS ===
+(function() {
+  const canvas = document.getElementById('synapse-canvas');
+  const ctx = canvas.getContext('2d');
+  let nodes = [];
+  let packets = [];
+  const NODE_COUNT = 60;
+  const CONNECTION_DIST = 150;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Node {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.25;
+      this.vy = (Math.random() - 0.5) * 0.25;
+      this.r = Math.random() * 2 + 0.5;
+      this.pulse = Math.random() * Math.PI * 2;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.pulse += 0.015;
+      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+    }
+    draw() {
+      const alpha = 0.3 + Math.sin(this.pulse) * 0.2;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 255, 136, ${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  class Packet {
+    constructor(fromNode, toNode) {
+      this.from = fromNode;
+      this.to = toNode;
+      this.t = 0;
+      this.speed = 0.008 + Math.random() * 0.012;
+      this.alive = true;
+    }
+    update() {
+      this.t += this.speed;
+      if (this.t >= 1) this.alive = false;
+    }
+    draw() {
+      const x = this.from.x + (this.to.x - this.from.x) * this.t;
+      const y = this.from.y + (this.to.y - this.from.y) * this.t;
+      const alpha = 0.8 * (1 - Math.abs(this.t - 0.5) * 2);
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 255, 136, ${alpha})`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 255, 136, ${alpha * 0.3})`;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < NODE_COUNT; i++) {
+    nodes.push(new Node());
+  }
+
+  let frameCount = 0;
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frameCount++;
+
+    // Update and draw nodes
+    for (let i = 0; i < nodes.length; i++) {
+      nodes[i].update();
+      nodes[i].draw();
+      // Draw connections
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECTION_DIST) {
+          const alpha = (1 - dist / CONNECTION_DIST) * 0.12;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = `rgba(0, 255, 136, ${alpha * 0.5})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+          // Occasionally purple connections
+          if ((i + j) % 7 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(107, 33, 168, ${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    // Spawn packets occasionally
+    if (frameCount % 45 === 0) {
+      const i = Math.floor(Math.random() * nodes.length);
+      let closest = -1;
+      let closestDist = Infinity;
+      for (let j = 0; j < nodes.length; j++) {
+        if (j === i) continue;
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECTION_DIST && dist < closestDist) {
+          closestDist = dist;
+          closest = j;
+        }
+      }
+      if (closest >= 0) {
+        packets.push(new Packet(nodes[i], nodes[closest]));
+      }
+    }
+
+    // Update and draw packets
+    for (let i = packets.length - 1; i >= 0; i--) {
+      packets[i].update();
+      if (!packets[i].alive) {
+        packets.splice(i, 1);
+      } else {
+        packets[i].draw();
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+// === SCROLL FADE-IN ===
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08 });
+
+chapters.forEach(ch => observer.observe(ch));
+
+// === ACTIVE NAV ===
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) {
+      current = section.id;
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>

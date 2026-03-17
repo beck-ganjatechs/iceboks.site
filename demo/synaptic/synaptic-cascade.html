@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cascade — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Cascade</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H;
+
+  const ROWS=10,COLS=12,MAX_NODES=150,MAX_EDGES=400;
+  let nodeX,nodeY,nodeCD,nodeAlpha,nodeRow,nodeCount=0;
+  let edgeA,edgeB,edgeCount=0;
+  let signals=[];
+  let mouseX=0,mouseY=0;
+
+  function buildNetwork(){
+    nodeCount=0;edgeCount=0;signals=[];
+    nodeX=new Float32Array(MAX_NODES);
+    nodeY=new Float32Array(MAX_NODES);
+    nodeCD=new Float32Array(MAX_NODES);
+    nodeAlpha=new Float32Array(MAX_NODES);
+    nodeRow=new Uint8Array(MAX_NODES);
+    edgeA=new Uint16Array(MAX_EDGES);
+    edgeB=new Uint16Array(MAX_EDGES);
+
+    const spacingX=W/(COLS+1),spacingY=H/(ROWS+1);
+    const rowStart=[];
+    for(let r=0;r<ROWS;r++){
+      rowStart.push(nodeCount);
+      const cols=COLS-(r%2?1:0);
+      const offset=r%2?spacingX*0.5:0;
+      for(let c=0;c<cols&&nodeCount<MAX_NODES;c++){
+        nodeX[nodeCount]=spacingX*(c+1)+offset;
+        nodeY[nodeCount]=spacingY*(r+1);
+        nodeAlpha[nodeCount]=0.5;
+        nodeRow[nodeCount]=r;
+        nodeCount++;
+      }
+    }
+
+    // connect to next row (downward only)
+    for(let i=0;i<nodeCount&&edgeCount<MAX_EDGES;i++){
+      for(let j=i+1;j<nodeCount&&edgeCount<MAX_EDGES;j++){
+        if(nodeRow[j]!==nodeRow[i]+1)continue;
+        const dx=nodeX[i]-nodeX[j],dy=nodeY[i]-nodeY[j];
+        if(dx*dx+dy*dy<(W/(COLS)*1.5)*(W/(COLS)*1.5)){
+          edgeA[edgeCount]=i;edgeB[edgeCount]=j;edgeCount++;
+        }
+      }
+    }
+  }
+
+  function fireSignal(ni){
+    if(nodeCD[ni]>0)return;
+    nodeCD[ni]=90;
+    nodeAlpha[ni]=1.0;
+    for(let e=0;e<edgeCount;e++){
+      if(edgeA[e]===ni){
+        const t=edgeB[e];
+        signals.push({fromX:nodeX[ni],fromY:nodeY[ni],toX:nodeX[t],toY:nodeY[t],t:0,target:t});
+      }
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nodeCount;i++){
+      const dx=e.clientX-nodeX[i],dy=e.clientY-nodeY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<3000)fireSignal(best);
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;buildNetwork()}
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.2)';
+    ctx.fillRect(0,0,W,H);
+
+    // edges
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(160,160,180,0.1)';
+    ctx.lineWidth=0.7;
+    for(let e=0;e<edgeCount;e++){
+      ctx.moveTo(nodeX[edgeA[e]],nodeY[edgeA[e]]);
+      ctx.lineTo(nodeX[edgeB[e]],nodeY[edgeB[e]]);
+    }
+    ctx.stroke();
+
+    // nodes
+    for(let i=0;i<nodeCount;i++){
+      if(nodeCD[i]>0){nodeCD[i]--;nodeAlpha[i]=0.2+0.3*(nodeCD[i]/90)}
+      else if(nodeAlpha[i]<0.5)nodeAlpha[i]+=0.005;
+      const dx=mouseX-nodeX[i],dy=mouseY-nodeY[i],d2=dx*dx+dy*dy;
+      const extra=d2<8000?0.3*(1-Math.sqrt(d2)/90):0;
+      ctx.fillStyle=`rgba(200,200,210,${Math.min(1,nodeAlpha[i]+extra)})`;
+      ctx.fillRect(nodeX[i]-2,nodeY[i]-2,4,4);
+    }
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.025;
+      if(s.t>=1){fireSignal(s.target);signals.splice(i,1);continue}
+      const sx=s.fromX+(s.toX-s.fromX)*s.t;
+      const sy=s.fromY+(s.toY-s.fromY)*s.t;
+      const alpha=1-s.t*0.4;
+      // gold raindrop
+      ctx.fillStyle=`rgba(212,160,23,${alpha})`;
+      ctx.fillRect(sx-2,sy-3,4,6);
+      // trail
+      ctx.fillStyle=`rgba(212,160,23,${alpha*0.3})`;
+      ctx.fillRect(sx-1,sy-8,2,5);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();
+  addEventListener('resize',resize);
+  animate();
+})();
+</script>
+</body>
+</html>

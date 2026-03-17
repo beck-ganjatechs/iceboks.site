@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Trace — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Memory Trace</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H,cx,cy;
+  const MAX_N=120,MAX_E=400;
+  let nX,nY,nCD,nA,nCount=0;
+  let eA,eB,eW,eCount=0; // eW = edge weight (memory strength)
+  let signals=[];
+  let mouseX=0,mouseY=0;
+
+  function build(){
+    nCount=0;eCount=0;signals=[];
+    nX=new Float32Array(MAX_N);nY=new Float32Array(MAX_N);
+    nCD=new Float32Array(MAX_N);nA=new Float32Array(MAX_N);
+    eA=new Uint8Array(MAX_E);eB=new Uint8Array(MAX_E);
+    eW=new Float32Array(MAX_E);
+
+    // hex grid
+    const spacing=Math.min(W,H)*0.055;
+    const sqrt3=Math.sqrt(3);
+    const cols=Math.floor(W/(spacing*1.2));
+    const rows=Math.floor(H/(spacing*sqrt3*0.6));
+    const offX=(W-cols*spacing*1.2)/2+spacing;
+    const offY=(H-rows*spacing*sqrt3*0.5)/2+spacing;
+
+    for(let r=0;r<rows&&nCount<MAX_N;r++){
+      for(let c=0;c<cols&&nCount<MAX_N;c++){
+        nX[nCount]=offX+c*spacing*1.2+(r%2?spacing*0.6:0);
+        nY[nCount]=offY+r*spacing*sqrt3*0.5;
+        nA[nCount]=0.4;
+        nCount++;
+      }
+    }
+    // edges
+    const maxD=spacing*1.4;
+    for(let i=0;i<nCount&&eCount<MAX_E;i++){
+      for(let j=i+1;j<nCount&&eCount<MAX_E;j++){
+        const dx=nX[i]-nX[j],dy=nY[i]-nY[j];
+        if(dx*dx+dy*dy<maxD*maxD){
+          eA[eCount]=i;eB[eCount]=j;eW[eCount]=0.05;eCount++;
+        }
+      }
+    }
+  }
+
+  function fireNode(ni){
+    if(nCD[ni]>0)return;
+    nCD[ni]=60;nA[ni]=1.0;
+    for(let e=0;e<eCount;e++){
+      let t=-1;
+      if(eA[e]===ni)t=eB[e]; else if(eB[e]===ni)t=eA[e];
+      if(t>=0){
+        // strengthen edge (memory!)
+        eW[e]=Math.min(1.0,eW[e]+0.08);
+        signals.push({fx:nX[ni],fy:nY[ni],tx:nX[t],ty:nY[t],t:0,target:t,edge:e});
+      }
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nCount;i++){
+      const dx=e.clientX-nX[i],dy=e.clientY-nY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<3000)fireNode(best);
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;build()}
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.15)';
+    ctx.fillRect(0,0,W,H);
+
+    // edges - draw by weight groups for batching
+    // dim edges
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(120,120,140,0.06)';
+    ctx.lineWidth=0.5;
+    for(let e=0;e<eCount;e++){
+      if(eW[e]<0.15){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    }
+    ctx.stroke();
+    // medium edges
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(180,150,80,0.2)';
+    ctx.lineWidth=1.0;
+    for(let e=0;e<eCount;e++){
+      if(eW[e]>=0.15&&eW[e]<0.5){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    }
+    ctx.stroke();
+    // strong edges (gold highways)
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(212,160,23,0.5)';
+    ctx.lineWidth=2.0;
+    for(let e=0;e<eCount;e++){
+      if(eW[e]>=0.5){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    }
+    ctx.stroke();
+    // bright highways
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(240,192,64,0.7)';
+    ctx.lineWidth=3.0;
+    for(let e=0;e<eCount;e++){
+      if(eW[e]>=0.8){ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]])}
+    }
+    ctx.stroke();
+
+    // nodes
+    for(let i=0;i<nCount;i++){
+      if(nCD[i]>0){nCD[i]--;nA[i]=0.2+0.6*(nCD[i]/60)}
+      else if(nA[i]<0.4)nA[i]+=0.005;
+      const dx=mouseX-nX[i],dy=mouseY-nY[i],d2=dx*dx+dy*dy;
+      const extra=d2<6000?0.3*(1-Math.sqrt(d2)/78):0;
+      ctx.fillStyle=`rgba(200,200,210,${Math.min(1,nA[i]+extra)})`;
+      ctx.fillRect(nX[i]-2,nY[i]-2,4,4);
+    }
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.03;
+      if(s.t>=1){fireNode(s.target);signals.splice(i,1);continue}
+      const sx=s.fx+(s.tx-s.fx)*s.t,sy=s.fy+(s.ty-s.fy)*s.t;
+      ctx.fillStyle=`rgba(212,160,23,${1-s.t*0.4})`;
+      ctx.fillRect(sx-3,sy-3,6,6);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

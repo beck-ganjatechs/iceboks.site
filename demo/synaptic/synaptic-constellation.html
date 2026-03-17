@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constellation — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Constellation</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H,cx,cy;
+  const MAX_N=100;
+  let nX,nY,nVX,nVY,nTargX,nTargY,nA,nCount=0;
+  let mouseX=-999,mouseY=-999;
+
+  // hex grid target positions
+  let gridX,gridY,gridCount=0;
+
+  function buildGrid(){
+    const spacing=Math.min(W,H)*0.06;
+    const sqrt3=Math.sqrt(3);
+    const cols=Math.floor(W/(spacing*1.2))-1;
+    const rows=Math.floor(H/(spacing*sqrt3*0.5))-1;
+    const offX=(W-cols*spacing*1.2)/2+spacing*0.6;
+    const offY=(H-rows*spacing*sqrt3*0.5)/2+spacing*0.5;
+    gridX=new Float32Array(cols*rows);
+    gridY=new Float32Array(cols*rows);
+    gridCount=0;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        gridX[gridCount]=offX+c*spacing*1.2+(r%2?spacing*0.6:0);
+        gridY[gridCount]=offY+r*spacing*sqrt3*0.5;
+        gridCount++;
+      }
+    }
+  }
+
+  function init(){
+    nCount=Math.min(MAX_N,80);
+    nX=new Float32Array(MAX_N);nY=new Float32Array(MAX_N);
+    nVX=new Float32Array(MAX_N);nVY=new Float32Array(MAX_N);
+    nTargX=new Float32Array(MAX_N);nTargY=new Float32Array(MAX_N);
+    nA=new Float32Array(MAX_N);
+    buildGrid();
+    for(let i=0;i<nCount;i++){
+      nX[i]=Math.random()*W;nY[i]=Math.random()*H;
+      nVX[i]=(Math.random()-0.5)*0.5;nVY[i]=(Math.random()-0.5)*0.5;
+      nA[i]=0.4+Math.random()*0.3;
+      assignTarget(i);
+    }
+  }
+
+  function assignTarget(i){
+    // find nearest unoccupied grid point
+    let best=-1,bestD=Infinity;
+    for(let g=0;g<gridCount;g++){
+      const dx=nX[i]-gridX[g],dy=nY[i]-gridY[g],d2=dx*dx+dy*dy;
+      if(d2<bestD){bestD=d2;best=g}
+    }
+    if(best>=0){nTargX[i]=gridX[best];nTargY[i]=gridY[best]}
+  }
+
+  canvas.addEventListener('click',function(e){
+    if(nCount<MAX_N){
+      nX[nCount]=e.clientX;nY[nCount]=e.clientY;
+      nVX[nCount]=(Math.random()-0.5)*3;nVY[nCount]=(Math.random()-0.5)*3;
+      nA[nCount]=0.8;
+      assignTarget(nCount);
+      nCount++;
+    }
+    // also push nearby nodes away
+    for(let i=0;i<nCount;i++){
+      const dx=nX[i]-e.clientX,dy=nY[i]-e.clientY,d2=dx*dx+dy*dy;
+      if(d2<10000&&d2>1){
+        const d=Math.sqrt(d2);
+        nVX[i]+=dx/d*2;nVY[i]+=dy/d*2;
+      }
+    }
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;init()}
+
+  const EDGE_DIST2_MAX=(80*80); // dynamic edges
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.12)';
+    ctx.fillRect(0,0,W,H);
+
+    // physics: spring toward target + damping
+    for(let i=0;i<nCount;i++){
+      const dx=nTargX[i]-nX[i],dy=nTargY[i]-nY[i];
+      nVX[i]+=dx*0.001;nVY[i]+=dy*0.001;
+      nVX[i]*=0.98;nVY[i]*=0.98;
+      nX[i]+=nVX[i];nY[i]+=nVY[i];
+      // boundary
+      if(nX[i]<10){nX[i]=10;nVX[i]*=-0.5}
+      if(nX[i]>W-10){nX[i]=W-10;nVX[i]*=-0.5}
+      if(nY[i]<10){nY[i]=10;nVY[i]*=-0.5}
+      if(nY[i]>H-10){nY[i]=H-10;nVY[i]*=-0.5}
+      // reassign target periodically (every ~120 frames via random)
+      if(Math.random()<0.008)assignTarget(i);
+    }
+
+    // dynamic edges (computed per frame but cheap at n<=100)
+    ctx.beginPath();ctx.strokeStyle='rgba(180,190,200,0.1)';ctx.lineWidth=0.5;
+    let edgeDrawn=0;
+    for(let i=0;i<nCount&&edgeDrawn<400;i++){
+      for(let j=i+1;j<nCount&&edgeDrawn<400;j++){
+        const dx=nX[i]-nX[j],dy=nY[i]-nY[j],d2=dx*dx+dy*dy;
+        if(d2<EDGE_DIST2_MAX){
+          ctx.moveTo(nX[i],nY[i]);ctx.lineTo(nX[j],nY[j]);
+          edgeDrawn++;
+        }
+      }
+    }
+    ctx.stroke();
+
+    // nodes
+    for(let i=0;i<nCount;i++){
+      const dx=mouseX-nX[i],dy=mouseY-nY[i],d2=dx*dx+dy*dy;
+      const extra=d2<6000?0.3*(1-Math.sqrt(d2)/78):0;
+      // twinkle
+      nA[i]+=(Math.random()-0.5)*0.01;
+      if(nA[i]<0.3)nA[i]=0.3;if(nA[i]>0.8)nA[i]=0.8;
+      ctx.fillStyle=`rgba(212,180,80,${Math.min(1,nA[i]+extra)})`;
+      ctx.beginPath();ctx.arc(nX[i],nY[i],2.5,0,6.283);ctx.fill();
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

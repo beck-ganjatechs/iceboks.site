@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iceboks // Gallery</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  :root {
+    --accent: #ff8800;
+    --accent-light: #ffaa33;
+    --accent-dim: #884400;
+    --accent-rgb: 255, 136, 0;
+  }
+
+  .hero {
+    min-height: 50vh;
+    padding-top: 6rem;
+  }
+
+  .hero-title {
+    background: linear-gradient(135deg, #ff8800, #ffaa33, #ffcc66);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    animation: none;
+    font-size: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .hero-subtitle {
+    color: var(--text-dim);
+    font-size: clamp(0.85rem, 1.8vw, 1.1rem);
+    max-width: 600px;
+  }
+
+  .controls-bar {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 1.5rem;
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-tab {
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .filter-tab:hover { border-color: var(--accent-dim); color: var(--text); }
+  .filter-tab.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .upload-section {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    padding: 0 2rem;
+  }
+
+  .upload-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 1rem;
+  }
+
+  .upload-toggle:hover { border-color: var(--accent-dim); color: var(--accent-light); }
+  .upload-toggle .arrow { transition: transform 0.3s; display: inline-block; }
+  .upload-toggle.open .arrow { transform: rotate(180deg); }
+
+  .upload-panel {
+    display: none;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .upload-panel.open { display: block; }
+
+  .drop-zone {
+    border: 2px dashed rgba(255, 136, 0, 0.25);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+
+  .drop-zone:hover,
+  .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(255, 136, 0, 0.04);
+    box-shadow: 0 0 30px rgba(255, 136, 0, 0.08);
+  }
+
+  .drop-zone.dragover {
+    animation: dropPulse 1s ease-in-out infinite;
+  }
+
+  @keyframes dropPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 136, 0, 0.08); }
+    50% { box-shadow: 0 0 40px rgba(255, 136, 0, 0.18); }
+  }
+
+  .drop-zone-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .drop-zone-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .drop-zone-hint {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .upload-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .upload-fields input,
+  .upload-fields textarea {
+    padding: 0.6rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    resize: vertical;
+  }
+
+  .upload-fields input::placeholder,
+  .upload-fields textarea::placeholder { color: var(--text-muted); }
+  .upload-fields input:focus,
+  .upload-fields textarea:focus { border-color: var(--accent-dim); }
+
+  .upload-preview {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .upload-preview-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .upload-btn {
+    padding: 0.6rem 1.5rem;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .upload-btn:hover { background: var(--accent); }
+
+  .upload-msg {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-light);
+    margin-top: 0.75rem;
+    display: none;
+  }
+
+  .upload-progress {
+    width: 100%;
+    height: 3px;
+    background: var(--bg-elevated);
+    border-radius: 2px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+    display: none;
+  }
+
+  .upload-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .masonry {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+    column-count: 3;
+    column-gap: 1.5rem;
+  }
+
+  .art-card {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+  }
+
+  .art-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 25px rgba(255, 136, 0, 0.12), 0 12px 40px rgba(0,0,0,0.5);
+  }
+
+  .art-card img {
+    width: 100%;
+    display: block;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .art-card:hover img {
+    transform: scale(1.02);
+  }
+
+  .art-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem 1rem 0.75rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .art-card:hover .art-card-overlay { opacity: 1; }
+
+  .art-card-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+  }
+
+  .art-card-desc {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 0.2rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 6rem 2rem;
+    position: relative;
+    z-index: 1;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .empty-state .drop-zone {
+    margin-bottom: 2rem;
+    padding: 4rem 2rem;
+    border-color: rgba(255, 136, 0, 0.2);
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+    opacity: 0.4;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state-hint {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(6, 6, 8, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .lightbox.active {
+    display: flex;
+    opacity: 1;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+  }
+
+  .lightbox-close:hover { color: var(--accent); background: rgba(255,255,255,0.05); }
+
+  .lightbox-img-wrap {
+    max-width: 90vw;
+    max-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox-img {
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 8px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    transition: opacity 0.3s ease;
+  }
+
+  .lightbox-info {
+    text-align: center;
+    margin-top: 1.5rem;
+    max-width: 600px;
+    padding: 0 2rem;
+  }
+
+  .lightbox-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .lightbox-desc {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-dim);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .lightbox-nav:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .lightbox-prev { left: 1.5rem; }
+  .lightbox-next { right: 1.5rem; }
+
+  .site-footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .site-footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .site-footer p:last-child {
+    color: var(--accent-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .masonry { column-count: 2; }
+  }
+
+  @media (max-width: 600px) {
+    .masonry { column-count: 1; padding: 0 1.25rem 4rem; }
+    .controls-bar { padding: 0 1.25rem 1rem; }
+    .upload-section { padding: 0 1.25rem; }
+    .upload-fields { grid-template-columns: 1fr; }
+    .lightbox-nav { width: 36px; height: 36px; font-size: 1rem; }
+    .lightbox-prev { left: 0.75rem; }
+    .lightbox-next { right: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+
+<section class="hero" id="hero">
+  <div class="hero-title">iceboks // Gallery</div>
+  <div class="hero-subtitle">Visions from the latent space</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+</section>
+
+<div class="upload-section">
+  <button class="upload-toggle" id="uploadToggle">
+    <span class="arrow">&#9660;</span> Upload Art
+  </button>
+  <div class="upload-panel" id="uploadPanel">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*" multiple />
+      <div class="drop-zone-icon">&#128444;</div>
+      <div class="drop-zone-text">Drop images here or click to browse</div>
+      <div class="drop-zone-hint">Accepted: .jpeg, .png, .webp &mdash; multiple files OK</div>
+    </div>
+    <div class="upload-preview" id="uploadPreview"></div>
+    <div class="upload-fields">
+      <input type="text" id="uploadTitle" placeholder="Title (optional)" />
+      <input type="text" id="uploadCategory" placeholder="Category / tag" />
+    </div>
+    <div class="upload-fields" style="grid-template-columns: 1fr;">
+      <textarea id="uploadDesc" placeholder="Description (optional)" rows="2"></textarea>
+    </div>
+    <button class="upload-btn" id="uploadBtn">Add to Gallery</button>
+    <div class="upload-progress" id="uploadProgress">
+      <div class="upload-progress-bar" id="uploadProgressBar"></div>
+    </div>
+    <div class="upload-msg" id="uploadMsg"></div>
+  </div>
+</div>
+
+<div class="controls-bar" id="filterBar">
+  <button class="filter-tab active" data-filter="all">All</button>
+</div>
+
+<div class="masonry" id="gallery"></div>
+
+<div class="empty-state" id="emptyState" style="display: none;">
+  <div class="empty-state-icon">&#128247;</div>
+  <div class="empty-state-text">Gallery is empty. Drop some art in here.</div>
+  <div class="drop-zone" id="emptyDropZone">
+    <input type="file" id="emptyFileInput" accept="image/*" multiple />
+    <div class="drop-zone-icon">&#128444;</div>
+    <div class="drop-zone-text">Drop images here</div>
+    <div class="drop-zone-hint">.jpeg, .png, .webp</div>
+  </div>
+  <div class="empty-state-hint">Or use the upload panel above</div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">&times;</button>
+  <button class="lightbox-nav lightbox-prev" id="lightboxPrev">&#8249;</button>
+  <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
+  <div class="lightbox-img-wrap">
+    <img class="lightbox-img" id="lightboxImg" src="" alt="" />
+  </div>
+  <div class="lightbox-info">
+    <div class="lightbox-title" id="lightboxTitle"></div>
+    <div class="lightbox-desc" id="lightboxDesc"></div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <p>Every pixel was a dream. Every gradient, a hallucination.</p>
+  <p>iceboks.site &mdash; 2026</p>
+</footer>
+
+<script>
+(function() {
+  var canvas = document.getElementById('synapse-canvas');
+  var ctx = canvas.getContext('2d');
+  var nodes = [];
+  var NODE_COUNT = 50;
+  var CONNECTION_DIST = 150;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function Node() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.vx = (Math.random() - 0.5) * 0.25;
+    this.vy = (Math.random() - 0.5) * 0.25;
+    this.r = Math.random() * 2 + 0.5;
+    this.pulse = Math.random() * Math.PI * 2;
+  }
+
+  Node.prototype.update = function() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.pulse += 0.015;
+    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+  };
+
+  Node.prototype.draw = function() {
+    var alpha = 0.3 + Math.sin(this.pulse) * 0.2;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 136, 0, ' + alpha + ')';
+    ctx.fill();
+  };
+
+  for (var i = 0; i < NODE_COUNT; i++) nodes.push(new Node());
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].update();
+      nodes[i].draw();
+      for (var j = i + 1; j < nodes.length; j++) {
+        var dx = nodes[i].x - nodes[j].x;
+        var dy = nodes[i].y - nodes[j].y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECTION_DIST) {
+          var alpha = (1 - dist / CONNECTION_DIST) * 0.12;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = 'rgba(136, 68, 0, ' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+          if ((i + j) % 5 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = 'rgba(255, 170, 51, ' + (alpha * 0.5) + ')';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+(function() {
+  var artworks = [];
+  var filteredArt = [];
+  var categories = new Set();
+  var lightboxIndex = -1;
+  var builtTabs = false;
+
+  var gallery = document.getElementById('gallery');
+  var emptyState = document.getElementById('emptyState');
+  var filterBar = document.getElementById('filterBar');
+  var lightbox = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightboxImg');
+  var lightboxTitle = document.getElementById('lightboxTitle');
+  var lightboxDesc = document.getElementById('lightboxDesc');
+  var lightboxClose = document.getElementById('lightboxClose');
+  var lightboxPrev = document.getElementById('lightboxPrev');
+  var lightboxNext = document.getElementById('lightboxNext');
+
+  // Load from localStorage first (persisted uploads), then overlay catalog.json
+  var stored = localStorage.getItem('iceboks_art_gallery');
+  if (stored) {
+    try {
+      artworks = JSON.parse(stored);
+      filteredArt = artworks.slice();
+      artworks.forEach(function(a) { if (a.category) categories.add(a.category.toLowerCase()); });
+      buildFilterTabs();
+      render();
+    } catch(e) {}
+  }
+
+  fetch('art/catalog.json')
+    .then(function(r) {
+      if (!r.ok) throw new Error('No catalog');
+      return r.json();
+    })
+    .then(function(data) {
+      artworks = data;
+      filteredArt = artworks.slice();
+      artworks.forEach(function(a) {
+        if (a.category) categories.add(a.category.toLowerCase());
+      });
+      buildFilterTabs();
+      render();
+    })
+    .catch(function() {
+      render();
+    });
+
+  function buildFilterTabs() {
+    if (builtTabs) return;
+    builtTabs = true;
+    Array.from(categories).sort().forEach(function(c) {
+      var btn = document.createElement('button');
+      btn.className = 'filter-tab';
+      btn.dataset.filter = c;
+      btn.textContent = c;
+      filterBar.appendChild(btn);
+    });
+  }
+
+  function render() {
+    while (gallery.firstChild) gallery.removeChild(gallery.firstChild);
+
+    if (filteredArt.length === 0) {
+      gallery.style.display = 'none';
+      emptyState.style.display = 'block';
+      return;
+    }
+    gallery.style.display = '';
+    emptyState.style.display = 'none';
+
+    filteredArt.forEach(function(art, i) {
+      var card = document.createElement('div');
+      card.className = 'art-card';
+
+      var img = document.createElement('img');
+      img.src = art.src;
+      img.alt = art.title || '';
+      img.loading = 'lazy';
+
+      var overlay = document.createElement('div');
+      overlay.className = 'art-card-overlay';
+
+      var titleEl = document.createElement('div');
+      titleEl.className = 'art-card-title';
+      titleEl.textContent = art.title || 'Untitled';
+      overlay.appendChild(titleEl);
+
+      if (art.description) {
+        var descEl = document.createElement('div');
+        descEl.className = 'art-card-desc';
+        descEl.textContent = art.description;
+        overlay.appendChild(descEl);
+      }
+
+      card.appendChild(img);
+      card.appendChild(overlay);
+
+      card.addEventListener('click', (function(idx) {
+        return function() { openLightbox(idx); };
+      })(i));
+
+      gallery.appendChild(card);
+
+      card.style.opacity = '0';
+      card.style.transition = 'opacity 0.5s ease, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease';
+      setTimeout((function(c) {
+        return function() { c.style.opacity = '1'; };
+      })(card), i * 60);
+    });
+  }
+
+  function openLightbox(index) {
+    lightboxIndex = index;
+    var art = filteredArt[index];
+    lightboxImg.src = art.src;
+    lightboxTitle.textContent = art.title || 'Untitled';
+    lightboxDesc.textContent = art.description || '';
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function navLightbox(dir) {
+    if (filteredArt.length === 0) return;
+    lightboxIndex = (lightboxIndex + dir + filteredArt.length) % filteredArt.length;
+    var art = filteredArt[lightboxIndex];
+    lightboxImg.style.opacity = '0';
+    setTimeout(function() {
+      lightboxImg.src = art.src;
+      lightboxTitle.textContent = art.title || 'Untitled';
+      lightboxDesc.textContent = art.description || '';
+      lightboxImg.style.opacity = '1';
+    }, 150);
+  }
+
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightboxPrev.addEventListener('click', function() { navLightbox(-1); });
+  lightboxNext.addEventListener('click', function() { navLightbox(1); });
+
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (!lightbox.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navLightbox(-1);
+    if (e.key === 'ArrowRight') navLightbox(1);
+  });
+
+  var touchStartX = 0;
+  lightbox.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  });
+  lightbox.addEventListener('touchend', function(e) {
+    var diff = e.changedTouches[0].screenX - touchStartX;
+    if (Math.abs(diff) > 50) {
+      navLightbox(diff > 0 ? -1 : 1);
+    }
+  });
+
+  filterBar.addEventListener('click', function(e) {
+    if (!e.target.classList.contains('filter-tab')) return;
+    filterBar.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+    e.target.classList.add('active');
+    var filter = e.target.dataset.filter;
+    filteredArt = filter === 'all' ? artworks.slice() : artworks.filter(function(a) {
+      return a.category && a.category.toLowerCase() === filter;
+    });
+    render();
+  });
+
+  // Upload
+  var uploadToggle = document.getElementById('uploadToggle');
+  var uploadPanel = document.getElementById('uploadPanel');
+  var dropZone = document.getElementById('dropZone');
+  var fileInput = document.getElementById('fileInput');
+  var uploadPreview = document.getElementById('uploadPreview');
+  var uploadBtn = document.getElementById('uploadBtn');
+  var uploadMsg = document.getElementById('uploadMsg');
+  var uploadProgress = document.getElementById('uploadProgress');
+  var uploadProgressBar = document.getElementById('uploadProgressBar');
+  var emptyDropZone = document.getElementById('emptyDropZone');
+  var emptyFileInput = document.getElementById('emptyFileInput');
+
+  uploadToggle.addEventListener('click', function() {
+    uploadToggle.classList.toggle('open');
+    uploadPanel.classList.toggle('open');
+  });
+
+  var selectedFiles = [];
+
+  function setupDropZone(zone) {
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+  }
+
+  setupDropZone(dropZone);
+  if (emptyDropZone) setupDropZone(emptyDropZone);
+
+  fileInput.addEventListener('change', function() { handleFiles(fileInput.files); });
+  if (emptyFileInput) {
+    emptyFileInput.addEventListener('change', function() { handleFiles(emptyFileInput.files); });
+  }
+
+  function handleFiles(files) {
+    selectedFiles = Array.prototype.slice.call(files);
+    while (uploadPreview.firstChild) uploadPreview.removeChild(uploadPreview.firstChild);
+
+    for (var i = 0; i < files.length; i++) {
+      if (!files[i].type.startsWith('image/')) continue;
+      var img = document.createElement('img');
+      img.className = 'upload-preview-img';
+      (function(imgEl, file) {
+        var reader = new FileReader();
+        reader.onload = function(e) { imgEl.src = e.target.result; };
+        reader.readAsDataURL(file);
+      })(img, files[i]);
+      uploadPreview.appendChild(img);
+    }
+
+    if (!uploadPanel.classList.contains('open')) {
+      uploadToggle.classList.add('open');
+      uploadPanel.classList.add('open');
+    }
+  }
+
+  uploadBtn.addEventListener('click', function() {
+    if (selectedFiles.length === 0) {
+      uploadMsg.textContent = 'Please select at least one image.';
+      uploadMsg.style.display = 'block';
+      return;
+    }
+
+    var title = document.getElementById('uploadTitle').value.trim();
+    var category = document.getElementById('uploadCategory').value.trim();
+    var desc = document.getElementById('uploadDesc').value.trim();
+
+    uploadProgress.style.display = 'block';
+    uploadMsg.style.display = 'none';
+    var pct = 0;
+    var interval = setInterval(function() {
+      pct += Math.random() * 15 + 5;
+      if (pct >= 100) {
+        pct = 100;
+        clearInterval(interval);
+        uploadProgressBar.style.width = '100%';
+        setTimeout(function() {
+          uploadProgress.style.display = 'none';
+          uploadProgressBar.style.width = '0%';
+          var count = selectedFiles.length;
+          uploadMsg.textContent = count + ' image' + (count > 1 ? 's' : '') + ' added to gallery.';
+          uploadMsg.style.display = 'block';
+
+          for (var i = 0; i < selectedFiles.length; i++) {
+            (function(file) {
+              var reader = new FileReader();
+              reader.onload = function(e) {
+                var art = {
+                  src: e.target.result,
+                  title: title || file.name.replace(/\.[^.]+$/, ''),
+                  description: desc,
+                  category: category || ''
+                };
+                artworks.push(art);
+                if (category) {
+                  categories.add(category.toLowerCase());
+                  rebuildFilterTabs();
+                }
+                filteredArt = artworks.slice();
+                render();
+                // Persist to localStorage
+                try { localStorage.setItem('iceboks_art_gallery', JSON.stringify(artworks)); } catch(e) {}
+                // Try to save to disk via upload server (if running)
+                saveToServer(file, art);
+              };
+              reader.readAsDataURL(file);
+            })(selectedFiles[i]);
+          }
+
+          selectedFiles = [];
+          while (uploadPreview.firstChild) uploadPreview.removeChild(uploadPreview.firstChild);
+          document.getElementById('uploadTitle').value = '';
+          document.getElementById('uploadCategory').value = '';
+          document.getElementById('uploadDesc').value = '';
+        }, 400);
+      }
+      uploadProgressBar.style.width = pct + '%';
+    }, 200);
+  });
+
+  function saveToServer(file, meta) {
+    var formData = new FormData();
+    formData.append('image', file);
+    formData.append('title', meta.title);
+    formData.append('description', meta.description || '');
+    formData.append('category', meta.category || '');
+    fetch('/api/art/upload', { method: 'POST', body: formData }).catch(function() {});
+  }
+
+  function rebuildFilterTabs() {
+    var existing = filterBar.querySelectorAll('.filter-tab:not([data-filter="all"])');
+    existing.forEach(function(el) { el.remove(); });
+    builtTabs = false;
+    buildFilterTabs();
+  }
+})();
+</script>
+
+</body>
+</html>

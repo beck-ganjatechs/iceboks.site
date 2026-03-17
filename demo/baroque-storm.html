@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baroque Particle Storm — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: none; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; cursor: pointer; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back">← iceboks.site</a>
+<div class="title">Baroque Particle Storm</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, mx, my, t = 0, mouseDown = false;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; mx = cx; my = cy; }
+resize();
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+addEventListener('mousedown', () => mouseDown = true);
+addEventListener('mouseup', () => mouseDown = false);
+addEventListener('touchmove', e => { e.preventDefault(); mx = e.touches[0].clientX; my = e.touches[0].clientY; }, {passive:false});
+addEventListener('touchstart', e => { mouseDown = true; mx = e.touches[0].clientX; my = e.touches[0].clientY; });
+addEventListener('touchend', () => mouseDown = false);
+
+const PARTICLE_COUNT = 600;
+const particles = [];
+
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  particles.push(createParticle());
+}
+
+function createParticle() {
+  const angle = Math.random() * Math.PI * 2;
+  const dist = Math.random() * 300 + 20;
+  return {
+    x: cx + Math.cos(angle) * dist,
+    y: cy + Math.sin(angle) * dist,
+    vx: 0, vy: 0,
+    size: Math.random() * 3 + 0.5,
+    gold: Math.random() > 0.35,
+    frost: Math.random() > 0.85,
+    life: 0.5 + Math.random() * 0.5,
+    angle: angle,
+    orbitRadius: dist,
+    orbitSpeed: (Math.random() - 0.5) * 0.003,
+    spiral: Math.random() * 0.2 - 0.1,
+  };
+}
+
+// Baroque swirl curves (golden ratio spirals)
+function drawBaroqueSwirls() {
+  const phi = (1 + Math.sqrt(5)) / 2; // golden ratio
+  const numSwirls = 3;
+
+  for (let s = 0; s < numSwirls; s++) {
+    const offset = (Math.PI * 2 / numSwirls) * s + t * 0.1;
+    ctx.beginPath();
+    for (let i = 0; i < 200; i++) {
+      const theta = i * 0.05 + offset;
+      const r = 5 * Math.pow(phi, theta / (Math.PI * 2)) * 0.3;
+      if (r > Math.max(W, H) * 0.5) break;
+      const x = cx + Math.cos(theta) * r;
+      const y = cy + Math.sin(theta) * r;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    const alpha = 0.04 + Math.sin(t + s) * 0.02;
+    ctx.strokeStyle = `rgba(212, 160, 23, ${alpha})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+}
+
+function updateParticles() {
+  for (const p of particles) {
+    // Orbit around cursor
+    const dx = mx - p.x;
+    const dy = my - p.y;
+    const dist = Math.hypot(dx, dy);
+
+    // Attraction to cursor
+    const attraction = mouseDown ? 0.5 : 0.08;
+    const repulsion = mouseDown ? 0 : (dist < 80 ? (80 - dist) * 0.01 : 0);
+
+    p.vx += (dx / Math.max(dist, 1)) * attraction - (dx / Math.max(dist, 1)) * repulsion;
+    p.vy += (dy / Math.max(dist, 1)) * attraction - (dy / Math.max(dist, 1)) * repulsion;
+
+    // Orbital motion (perpendicular force)
+    if (dist > 20) {
+      const perpX = -dy / dist;
+      const perpY = dx / dist;
+      const orbitalForce = mouseDown ? 0.8 : 0.2;
+      p.vx += perpX * orbitalForce;
+      p.vy += perpY * orbitalForce;
+    }
+
+    // Sacred geometry snapping: particles tend toward hex angles
+    const angleToCenter = Math.atan2(p.y - cy, p.x - cx);
+    const nearestHexAngle = Math.round(angleToCenter / (Math.PI / 3)) * (Math.PI / 3);
+    const angleDiff = nearestHexAngle - angleToCenter;
+    p.vx += Math.cos(nearestHexAngle) * angleDiff * 0.02;
+    p.vy += Math.sin(nearestHexAngle) * angleDiff * 0.02;
+
+    // Damping
+    p.vx *= 0.92;
+    p.vy *= 0.92;
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Wrap
+    if (p.x < -50) p.x = W + 50;
+    if (p.x > W + 50) p.x = -50;
+    if (p.y < -50) p.y = H + 50;
+    if (p.y > H + 50) p.y = -50;
+  }
+}
+
+function drawParticles() {
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+
+    // Draw connections to nearby particles
+    for (let j = i + 1; j < particles.length; j++) {
+      const p2 = particles[j];
+      const d = Math.hypot(p.x - p2.x, p.y - p2.y);
+      if (d < 60) {
+        const alpha = (1 - d / 60) * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p2.x, p2.y);
+        const isGoldPair = p.gold && p2.gold;
+        ctx.strokeStyle = isGoldPair
+          ? `rgba(212, 160, 23, ${alpha})`
+          : `rgba(150, 150, 180, ${alpha * 0.6})`;
+        ctx.lineWidth = 0.4;
+        ctx.stroke();
+      }
+    }
+
+    // Draw particle
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+
+    if (p.frost) {
+      ctx.fillStyle = `rgba(200, 220, 255, ${p.life * 0.9})`;
+      ctx.shadowColor = 'rgba(200, 220, 255, 0.6)';
+      ctx.shadowBlur = 12;
+    } else if (p.gold) {
+      ctx.fillStyle = `rgba(212, 160, 23, ${p.life * 0.8})`;
+      ctx.shadowColor = 'rgba(212, 160, 23, 0.4)';
+      ctx.shadowBlur = 8;
+    } else {
+      ctx.fillStyle = `rgba(150, 150, 180, ${p.life * 0.5})`;
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Custom cursor: ornate crosshair
+function drawCursor() {
+  const size = mouseDown ? 25 : 15;
+  const pulse = Math.sin(t * 3) * 3;
+  const s = size + pulse;
+
+  ctx.save();
+  ctx.translate(mx, my);
+  ctx.rotate(t * 0.5);
+
+  // Draw ornate 6-pointed star cursor
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 4, Math.sin(a) * 4);
+    ctx.lineTo(Math.cos(a) * s, Math.sin(a) * s);
+    ctx.strokeStyle = `rgba(212, 160, 23, ${mouseDown ? 0.8 : 0.4})`;
+    ctx.lineWidth = mouseDown ? 1.5 : 0.8;
+    ctx.stroke();
+  }
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(0, 0, 2, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(212, 160, 23, 0.8)`;
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function animate() {
+  t += 0.016;
+
+  ctx.fillStyle = 'rgba(6, 6, 8, 0.12)';
+  ctx.fillRect(0, 0, W, H);
+
+  drawBaroqueSwirls();
+  updateParticles();
+  drawParticles();
+  drawCursor();
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

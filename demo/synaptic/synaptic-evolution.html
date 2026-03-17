@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evolution — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+  .stats{position:fixed;top:1.5rem;right:1.5rem;font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(200,200,210,0.5);text-align:right;line-height:1.8;letter-spacing:0.05em}
+  .stats span{color:rgba(212,160,23,0.7)}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Evolution</div>
+<div class="stats">Nodes: <span id="sNodes">0</span><br>Edges: <span id="sEdges">0</span></div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  const sNodes=document.getElementById('sNodes'),sEdges=document.getElementById('sEdges');
+  let W,H,cx,cy;
+  const MAX_N=150,MAX_E=400;
+
+  // use arrays that support deletion by swapping
+  let nodes=[]; // {x,y,cd,a,lastFire,alive}
+  let edges=[]; // {a,b,weight,lastSignal,alive}
+  let signals=[];
+  let mouseX,mouseY;
+  let spawnTimer=0;
+  const SPAWN_INTERVAL=120; // frames
+  let frame=0;
+
+  function init(){
+    nodes=[];edges=[];signals=[];
+    cx=W/2;cy=H/2;
+    mouseX=cx;mouseY=cy;
+    // start with 5 nodes near center
+    for(let i=0;i<5;i++){
+      const a=Math.PI*2*i/5;
+      nodes.push({x:cx+Math.cos(a)*60,y:cy+Math.sin(a)*60,cd:0,a:0.5,lastFire:0,alive:true});
+    }
+    // connect them
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        edges.push({a:i,b:j,weight:0.5,lastSignal:0,alive:true});
+      }
+    }
+  }
+
+  function addNode(x,y){
+    if(nodes.length>=MAX_N)return-1;
+    const idx=nodes.length;
+    nodes.push({x,y,cd:0,a:0.8,lastFire:frame,alive:true});
+    // connect to 2-3 nearest
+    const dists=[];
+    for(let i=0;i<nodes.length-1;i++){
+      if(!nodes[i].alive)continue;
+      const dx=nodes[i].x-x,dy=nodes[i].y-y;
+      dists.push({i,d:dx*dx+dy*dy});
+    }
+    dists.sort((a,b)=>a.d-b.d);
+    const connectCount=Math.min(3,dists.length);
+    for(let k=0;k<connectCount&&edges.length<MAX_E;k++){
+      edges.push({a:idx,b:dists[k].i,weight:0.3,lastSignal:frame,alive:true});
+    }
+    return idx;
+  }
+
+  function fireNode(ni){
+    const n=nodes[ni];
+    if(!n||!n.alive||n.cd>0)return;
+    n.cd=40;n.a=1.0;n.lastFire=frame;
+    for(let e=0;e<edges.length;e++){
+      const ed=edges[e];
+      if(!ed.alive)continue;
+      let t=-1;
+      if(ed.a===ni)t=ed.b; else if(ed.b===ni)t=ed.a;
+      if(t>=0&&nodes[t]&&nodes[t].alive){
+        ed.weight=Math.min(2.0,ed.weight+0.1);
+        ed.lastSignal=frame;
+        signals.push({fx:n.x,fy:n.y,tx:nodes[t].x,ty:nodes[t].y,t:0,target:t,edge:e});
+      }
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    // find nearest node
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nodes.length;i++){
+      if(!nodes[i].alive)continue;
+      const dx=e.clientX-nodes[i].x,dy=e.clientY-nodes[i].y,d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<2500)fireNode(best);
+    else{
+      // spawn near click if no node close
+      addNode(e.clientX+(Math.random()-0.5)*30,e.clientY+(Math.random()-0.5)*30);
+    }
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;init()}
+
+  function animate(){
+    frame++;
+    ctx.fillStyle='rgba(6,6,8,0.2)';
+    ctx.fillRect(0,0,W,H);
+
+    // spawn new node periodically, biased toward mouse
+    spawnTimer++;
+    if(spawnTimer>=SPAWN_INTERVAL&&nodes.length<MAX_N){
+      spawnTimer=0;
+      const sx=mouseX+(Math.random()-0.5)*100;
+      const sy=mouseY+(Math.random()-0.5)*100;
+      addNode(Math.max(20,Math.min(W-20,sx)),Math.max(20,Math.min(H-20,sy)));
+    }
+
+    // prune: remove edges with no signals for 600 frames (~10s)
+    for(let e=edges.length-1;e>=0;e--){
+      const ed=edges[e];
+      if(!ed.alive)continue;
+      if(frame-ed.lastSignal>600){ed.alive=false}
+      // also thin weight over time
+      ed.weight=Math.max(0.1,ed.weight-0.0005);
+    }
+
+    // prune: remove nodes that never fire for 900 frames (~15s)
+    for(let i=0;i<nodes.length;i++){
+      const n=nodes[i];
+      if(!n.alive)continue;
+      if(frame-n.lastFire>900&&nodes.length>5){
+        n.alive=false;
+        // kill connected edges
+        for(let e=0;e<edges.length;e++){
+          if(edges[e].a===i||edges[e].b===i)edges[e].alive=false;
+        }
+      }
+    }
+
+    // count alive
+    let aliveN=0,aliveE=0;
+
+    // edges
+    ctx.lineWidth=0.5;
+    // batch by weight
+    ctx.beginPath();ctx.strokeStyle='rgba(140,140,160,0.08)';
+    for(let e=0;e<edges.length;e++){
+      const ed=edges[e];if(!ed.alive||ed.weight<0.5)continue;
+      if(!nodes[ed.a].alive||!nodes[ed.b].alive)continue;
+      ctx.moveTo(nodes[ed.a].x,nodes[ed.a].y);ctx.lineTo(nodes[ed.b].x,nodes[ed.b].y);
+    }
+    ctx.stroke();
+    // thick edges
+    ctx.beginPath();ctx.strokeStyle='rgba(212,160,23,0.2)';ctx.lineWidth=1.5;
+    for(let e=0;e<edges.length;e++){
+      const ed=edges[e];if(!ed.alive||ed.weight<1.0)continue;
+      if(!nodes[ed.a].alive||!nodes[ed.b].alive)continue;
+      ctx.moveTo(nodes[ed.a].x,nodes[ed.a].y);ctx.lineTo(nodes[ed.b].x,nodes[ed.b].y);
+    }
+    ctx.stroke();
+    // thin edges
+    ctx.beginPath();ctx.strokeStyle='rgba(100,100,120,0.05)';ctx.lineWidth=0.4;
+    for(let e=0;e<edges.length;e++){
+      const ed=edges[e];if(!ed.alive||ed.weight>=0.5)continue;
+      if(!nodes[ed.a].alive||!nodes[ed.b].alive)continue;
+      ctx.moveTo(nodes[ed.a].x,nodes[ed.a].y);ctx.lineTo(nodes[ed.b].x,nodes[ed.b].y);
+      aliveE++;
+    }
+    ctx.stroke();
+
+    for(let e=0;e<edges.length;e++)if(edges[e].alive&&nodes[edges[e].a].alive&&nodes[edges[e].b].alive)aliveE++;
+
+    // nodes
+    for(let i=0;i<nodes.length;i++){
+      const n=nodes[i];
+      if(!n.alive)continue;
+      aliveN++;
+      if(n.cd>0){n.cd--;n.a=0.3+0.5*(n.cd/40)}
+      else if(n.a>0.4)n.a-=0.003;
+      const dx=mouseX-n.x,dy=mouseY-n.y,d2=dx*dx+dy*dy;
+      const extra=d2<6000?0.2*(1-Math.sqrt(d2)/78):0;
+      // new nodes pulse in
+      const age=frame-n.lastFire;
+      ctx.fillStyle=`rgba(200,200,210,${Math.min(1,n.a+extra)})`;
+      ctx.fillRect(n.x-2,n.y-2,4,4);
+    }
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.03;
+      if(s.t>=1){
+        if(nodes[s.target]&&nodes[s.target].alive)fireNode(s.target);
+        signals.splice(i,1);continue;
+      }
+      const sx=s.fx+(s.tx-s.fx)*s.t,sy=s.fy+(s.ty-s.fy)*s.t;
+      ctx.fillStyle=`rgba(212,160,23,${1-s.t*0.4})`;
+      ctx.fillRect(sx-3,sy-3,6,6);
+    }
+
+    if(signals.length>150)signals.splice(0,signals.length-80);
+
+    // stats
+    if(frame%15===0){sNodes.textContent=aliveN;sEdges.textContent=aliveE}
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

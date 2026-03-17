@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heartbeat — Synaptic Web</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#060608;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh}
+  .back-link{position:fixed;top:1.5rem;left:1.5rem;z-index:10;font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(212,160,23,0.5);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase}
+  .back-link:hover{color:rgba(212,160,23,0.9)}
+  .title{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:Georgia,serif;font-size:0.8rem;color:rgba(212,160,23,0.3);white-space:nowrap}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; iceboks.site</a>
+<canvas id="c"></canvas>
+<div class="title">Heartbeat</div>
+<script>
+(function(){
+  const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+  let W,H,cx,cy;
+  const MAX_N=100,MAX_E=400;
+  let nX,nY,nCD,nA,nCount=0;
+  let eA,eB,eCount=0;
+  let signals=[];
+  let mouseX=0,mouseY=0;
+  let beatTimer=0;
+  const BPM=72,BEAT_INTERVAL=60/(BPM)*60; // frames between beats
+
+  function build(){
+    nCount=0;eCount=0;signals=[];
+    nX=new Float32Array(MAX_N);nY=new Float32Array(MAX_N);
+    nCD=new Float32Array(MAX_N);nA=new Float32Array(MAX_N);
+    eA=new Uint8Array(MAX_E);eB=new Uint8Array(MAX_E);
+
+    const r0=Math.min(W,H)*0.04;
+    // center node
+    nX[0]=cx;nY[0]=cy;nA[0]=0.8;nCount=1;
+    // concentric rings
+    const rings=[8,16,24,32];
+    for(let ri=0;ri<rings.length&&nCount<MAX_N;ri++){
+      const count=rings[ri];
+      const radius=r0*(ri+1)*1.8;
+      for(let i=0;i<count&&nCount<MAX_N;i++){
+        const a=(Math.PI*2*i)/count-Math.PI/2;
+        nX[nCount]=cx+Math.cos(a)*radius;
+        nY[nCount]=cy+Math.sin(a)*radius;
+        nA[nCount]=0.4;
+        nCount++;
+      }
+    }
+    // edges: connect nearby
+    const maxD=r0*2.5;
+    for(let i=0;i<nCount&&eCount<MAX_E;i++){
+      for(let j=i+1;j<nCount&&eCount<MAX_E;j++){
+        const dx=nX[i]-nX[j],dy=nY[i]-nY[j];
+        if(dx*dx+dy*dy<maxD*maxD){eA[eCount]=i;eB[eCount]=j;eCount++}
+      }
+    }
+  }
+
+  function fireNode(ni){
+    if(nCD[ni]>0)return;
+    nCD[ni]=60;nA[ni]=1.0;
+    for(let e=0;e<eCount;e++){
+      let t=-1;
+      if(eA[e]===ni)t=eB[e]; else if(eB[e]===ni)t=eA[e];
+      if(t>=0)signals.push({fx:nX[ni],fy:nY[ni],tx:nX[t],ty:nY[t],t:0,target:t});
+    }
+  }
+
+  canvas.addEventListener('click',function(e){
+    let best=-1,bestD=Infinity;
+    for(let i=0;i<nCount;i++){
+      const dx=e.clientX-nX[i],dy=e.clientY-nY[i],d=dx*dx+dy*dy;
+      if(d<bestD){bestD=d;best=i}
+    }
+    if(best>=0&&bestD<3000)fireNode(best);
+  });
+  canvas.addEventListener('mousemove',function(e){mouseX=e.clientX;mouseY=e.clientY});
+
+  function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;cx=W/2;cy=H/2;build()}
+
+  function animate(){
+    ctx.fillStyle='rgba(6,6,8,0.18)';
+    ctx.fillRect(0,0,W,H);
+
+    // heartbeat
+    beatTimer++;
+    if(beatTimer>=BEAT_INTERVAL){beatTimer=0;fireNode(0)}
+
+    // breathing scale from center
+    const breathPhase=beatTimer/BEAT_INTERVAL;
+    const breathScale=1+0.02*Math.sin(breathPhase*Math.PI*2);
+
+    // edges
+    ctx.beginPath();
+    ctx.strokeStyle='rgba(160,160,180,0.08)';
+    ctx.lineWidth=0.6;
+    for(let e=0;e<eCount;e++){
+      ctx.moveTo(nX[eA[e]],nY[eA[e]]);ctx.lineTo(nX[eB[e]],nY[eB[e]]);
+    }
+    ctx.stroke();
+
+    // nodes with breathing
+    for(let i=0;i<nCount;i++){
+      if(nCD[i]>0){nCD[i]--;nA[i]=0.3+0.7*(nCD[i]/60)}
+      else if(nA[i]<0.4)nA[i]+=0.005;
+      // draw
+      const dx2=mouseX-nX[i],dy2=mouseY-nY[i],md=dx2*dx2+dy2*dy2;
+      const extra=md<8000?0.3*(1-Math.sqrt(md)/90):0;
+      const sz=2+((nA[i]>0.5)?2*(nA[i]-0.5):0);
+      // pulse glow for active nodes
+      if(nA[i]>0.6){
+        ctx.fillStyle=`rgba(212,160,23,${(nA[i]-0.6)*0.5})`;
+        ctx.beginPath();ctx.arc(nX[i],nY[i],sz+4,0,6.283);ctx.fill();
+      }
+      ctx.fillStyle=`rgba(220,210,200,${Math.min(1,nA[i]+extra)})`;
+      ctx.beginPath();ctx.arc(nX[i],nY[i],sz,0,6.283);ctx.fill();
+    }
+    // center node special
+    const cPulse=0.5+0.5*Math.sin(breathPhase*Math.PI*2);
+    ctx.fillStyle=`rgba(212,160,23,${0.3+cPulse*0.4})`;
+    ctx.beginPath();ctx.arc(cx,cy,6+cPulse*4,0,6.283);ctx.fill();
+
+    // signals
+    for(let i=signals.length-1;i>=0;i--){
+      const s=signals[i];
+      s.t+=0.035;
+      if(s.t>=1){fireNode(s.target);signals.splice(i,1);continue}
+      const sx=s.fx+(s.tx-s.fx)*s.t,sy=s.fy+(s.ty-s.fy)*s.t;
+      ctx.fillStyle=`rgba(212,160,23,${1-s.t*0.5})`;
+      ctx.beginPath();ctx.arc(sx,sy,3,0,6.283);ctx.fill();
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  resize();addEventListener('resize',resize);animate();
+})();
+</script>
+</body>
+</html>

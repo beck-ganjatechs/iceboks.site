@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mandala Generator — iceboks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060608; overflow: hidden; cursor: crosshair; }
+  canvas { display: block; }
+  .back { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 10; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: rgba(212,160,23,0.5); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+  .back:hover { color: #d4a017; }
+  .title { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 10; font-family: Georgia, serif; font-size: 0.8rem; color: rgba(212,160,23,0.3); letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back">← iceboks.site</a>
+<div class="title">Mandala Generator</div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, mx = 0.5, my = 0.5, t = 0;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; cx = W/2; cy = H/2; }
+resize();
+addEventListener('resize', resize);
+addEventListener('mousemove', e => { mx = e.clientX / W; my = e.clientY / H; });
+
+const colors = [
+  [212, 160, 23],   // gold
+  [190, 200, 220],  // silver
+  [160, 200, 255],  // frost-blue
+  [120, 80, 180],   // deep purple
+  [240, 192, 64],   // bright gold
+  [200, 210, 230],  // light silver
+];
+
+const rings = [];
+const maxRings = 20;
+
+function addRing() {
+  const ringIdx = rings.length;
+  const r = 30 + ringIdx * 22;
+  const patternType = Math.floor(Math.random() * 5); // circles, petals, dots, lines, triangles
+  const colorIdx = ringIdx % colors.length;
+  rings.push({
+    radius: r,
+    pattern: patternType,
+    color: colors[colorIdx],
+    rotation: 0,
+    rotSpeed: (Math.random() - 0.5) * 0.005 * (ringIdx % 2 === 0 ? 1 : -1),
+    birth: t,
+    alpha: 0,
+    elements: 6 + Math.floor(Math.random() * 8),
+    size: 4 + Math.random() * 8
+  });
+}
+
+// Start with a few rings
+for (let i = 0; i < 5; i++) addRing();
+
+function drawRing(ring, folds, complexity) {
+  const alpha = ring.alpha * (0.4 + complexity * 0.2);
+  if (alpha < 0.01) return;
+
+  const c = ring.color;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(ring.rotation);
+
+  const elemCount = Math.max(1, Math.floor(ring.elements * complexity));
+
+  for (let i = 0; i < folds; i++) {
+    const angle = (i / folds) * Math.PI * 2;
+    ctx.save();
+    ctx.rotate(angle);
+
+    switch (ring.pattern) {
+      case 0: // circles
+        for (let e = 0; e < elemCount; e++) {
+          const er = ring.radius + e * 3;
+          ctx.beginPath();
+          ctx.arc(er, 0, ring.size * (0.5 + e * 0.15), 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.6})`;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+        break;
+
+      case 1: // petals
+        for (let e = 0; e < elemCount; e++) {
+          const petalW = ring.size * 0.4;
+          const petalH = ring.size * (1 + e * 0.3);
+          ctx.beginPath();
+          ctx.ellipse(ring.radius, e * 4, petalW, petalH, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.5})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+        break;
+
+      case 2: // dots
+        for (let e = 0; e < elemCount; e++) {
+          const dr = ring.radius + (e - elemCount/2) * 5;
+          ctx.beginPath();
+          ctx.arc(dr, 0, 1 + e * 0.3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.7})`;
+          ctx.fill();
+        }
+        break;
+
+      case 3: // lines
+        for (let e = 0; e < elemCount; e++) {
+          const lr = ring.radius - ring.size + e * 2;
+          ctx.beginPath();
+          ctx.moveTo(lr, -ring.size * 0.5);
+          ctx.lineTo(lr + ring.size, ring.size * 0.5);
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.4})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+        break;
+
+      case 4: // triangles
+        for (let e = 0; e < Math.min(elemCount, 4); e++) {
+          const ts = ring.size * (0.5 + e * 0.2);
+          const tr = ring.radius + e * 5;
+          ctx.beginPath();
+          ctx.moveTo(tr, -ts);
+          ctx.lineTo(tr + ts * 0.866, ts * 0.5);
+          ctx.lineTo(tr - ts * 0.866, ts * 0.5);
+          ctx.closePath();
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.5})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+        break;
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function animate() {
+  ctx.fillStyle = 'rgba(6,6,8,0.06)';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.016;
+
+  const folds = Math.floor(3 + mx * 21); // 3 to 24
+  const complexity = 0.2 + my * 0.8;
+
+  // Add new rings over time
+  if (t % 3 < 0.02 && rings.length < maxRings) {
+    addRing();
+  }
+
+  // Update and draw rings
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const ring = rings[i];
+    const age = t - ring.birth;
+
+    // Fade in
+    if (age < 2) ring.alpha = age / 2;
+    else ring.alpha = Math.max(0, 1 - (age - 15) / 5);
+
+    ring.rotation += ring.rotSpeed;
+
+    // Remove fully faded rings
+    if (ring.alpha <= 0 && age > 15) {
+      rings.splice(i, 1);
+      // Add replacement
+      addRing();
+      continue;
+    }
+
+    drawRing(ring, folds, complexity);
+  }
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3 + Math.sin(t) * 1, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(212,160,23,${0.5 + Math.sin(t * 2) * 0.2})`;
+  ctx.fill();
+
+  // Faint concentric guide circles
+  for (let i = 1; i <= 6; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, i * 60, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(100,100,120,0.03)`;
+    ctx.lineWidth = 0.3;
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

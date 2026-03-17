@@ -1,0 +1,19 @@
+
+iceboks.site dev server
+  http://localhost:8090
+  Art uploads  → art/images/
+  Music uploads → music/mp3/
+
+Traceback (most recent call last):
+  File "/home/iceboks/projekts/iceboks.site/serve.py", line 195, in <module>
+    server = HTTPServer(('0.0.0.0', port), SiteHandler)
+  File "/usr/lib/python3.13/socketserver.py", line 457, in __init__
+    self.server_bind()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/socketserver.py", line 478, in server_bind
+    self.socket.bind(self.server_address)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 98] Address already in use
