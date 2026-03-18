@@ -371,6 +371,17 @@ Both learning. Both growing. Neither forgetting what matters.</pre>
   draw();
 })();
 
+// ── Chapter visibility on scroll ─────────────────────────────────────────────
+(function() {
+  const chapters = document.querySelectorAll('.chapter');
+  const visObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  chapters.forEach(c => visObs.observe(c));
+})();
+
 // ── Chapter nav scroll highlighting ──────────────────────────────────────────
 (function() {
   const sections = document.querySelectorAll('[id]');
