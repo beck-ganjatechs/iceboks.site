@@ -13,10 +13,17 @@
   }
 
   .hero-logo {
-    max-width: clamp(400px, 80vw, 1000px);
+    max-width: clamp(260px, 75vw, 1000px);
     height: auto;
     display: block;
     margin: -69px auto -69px;
+  }
+
+  @media (max-width: 480px) {
+    .hero-logo {
+      max-width: 85vw;
+      margin: -30px auto -30px;
+    }
   }
 
   .hero-subtitle {
