@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiquidBrain &amp; PoonGram — iceboks</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root {
+    --accent: #a855f7;
+    --accent-light: #c084fc;
+    --accent-dim: #3b0764;
+    --accent-rgb: 168, 85, 247;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<a href="../index.html" class="back-link">&larr; Back to iceboks.site</a>
+
+<!-- DESKTOP NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Idea</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">The Architecture</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">Synaptic Fatigue</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">Two Brains</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The API</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">MKUltra Layer</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">What It Isn't</span><span class="dot"></span></a>
+</nav>
+
+<!-- MOBILE NAV -->
+<button class="mobile-nav-toggle" id="mobileToggle" onclick="document.getElementById('mobileMenu').classList.toggle('open')">NAV</button>
+<div class="mobile-nav" id="mobileMenu">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Idea</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. The Architecture</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. Synaptic Fatigue</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. Two Brains</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The API</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. MKUltra Layer</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. What It Isn't</a>
+</div>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="hero">
+  <div class="hero-title">LiquidBrain</div>
+  <div class="hero-subtitle">We Built a Living Semantic Graph in Rust. It Has 18 Million Synapses. It Learns From Every Word You Type.</div>
+  <div class="hero-byline">iceboks + claude &mdash; march 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ==================== CONTENT ==================== -->
+<main class="content">
+
+<!-- ===== CHAPTER I ===== -->
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Idea That Wouldn't Go Away</h2>
+  </div>
+
+  <p>The question was simple: what if a language model didn't freeze when you stopped training it?</p>
+
+  <p>Every transformer you've ever talked to is a photograph. The weights are fixed at the moment training ended. It knows everything it learned up to the cutoff date and nothing after, unless you fine-tune it again. You can prompt it cleverly, RAG it, give it tools — but the underlying graph of associations doesn't move. It can't. That's not how it works.</p>
+
+  <p>We wanted something different. We wanted a model that changes <em>during the conversation.</em> That learns from your words in real time, not in a training job that takes 72 hours and costs $4,000. Something that forgets when things should be forgotten, and remembers what matters based on how much it's been reinforced.</p>
+
+  <p>We wanted a brain. Not a photograph of one.</p>
+
+  <div class="pull-quote">"What if language was not a matrix of frozen weights, but a living graph where connections fatigue, recover, and compete — like a brain?"</div>
+
+  <p>So we built it. In Rust. From scratch. No PyTorch. No CUDA. No gradient descent. The whole thing runs in RAM on a CPU and it's been running, learning, and evolving for months.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER II ===== -->
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">The Architecture</h2>
+  </div>
+
+  <p>LiquidBrain is a <strong>dynamic semantic graph</strong>. The data structure looks like this:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the graph</div>
+    <pre>LiquidBrain
+└── neurons : HashMap&lt;Vec&lt;u32&gt;, Neuron&gt;
+                  │
+        context n-gram (1 to 4 tokens)
+                  │
+                  └── connections : HashMap&lt;u32, Synapse&gt;
+                                         │          │
+                                     token_id    weight + health</pre>
+  </div>
+
+  <p>Every word maps to a <code>u32</code> ID. Every sequence of 1–4 words is a <strong>neuron</strong> — a node in the graph keyed by that n-gram. Each neuron holds a set of <strong>synapses</strong>: directed, weighted connections to the words that tend to follow it.</p>
+
+  <p>When you say <em>"the cat sat"</em>, the model simultaneously learns:</p>
+  <ul>
+    <li><code>[the]</code> → <em>cat</em> (unigram context)</li>
+    <li><code>[the, cat]</code> → <em>sat</em> (bigram context)</li>
+    <li><code>[the, cat, sat]</code> → END (trigram context)</li>
+  </ul>
+
+  <p>Every scale at once. Multi-resolution, always. This means the model has coverage at every grain of context simultaneously — and during generation, it uses the longest matching context first and backs off gracefully to shorter ones when it hits unknown territory.</p>
+
+  <p>No embedding lookup. No attention head. No feed-forward layer. Just a hash map, walking forward through probable paths, one token at a time.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Dimension</th><th>Transformer</th><th>LiquidBrain</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Storage</td><td>Dense weight matrices (GBs)</td><td>Sparse hash-map graph (MBs)</td></tr>
+      <tr><td>Training</td><td>Offline, gradient descent, GPU</td><td>Online, Hebbian-like, CPU</td></tr>
+      <tr><td>Context window</td><td>Fixed token limit</td><td>Dynamic n-gram backoff</td></tr>
+      <tr><td>Anti-repetition</td><td>Repetition penalty (post-hoc)</td><td>Synaptic fatigue (emergent)</td></tr>
+      <tr><td>Attention</td><td>Scaled dot-product</td><td>Focus-point + fact-recall</td></tr>
+      <tr><td>Interpretability</td><td>Low (opaque embeddings)</td><td>High — inspect any neuron</td></tr>
+      <tr><td>Online learning</td><td>No (frozen weights)</td><td>Yes — every input updates the graph</td></tr>
+    </tbody>
+  </table>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER III ===== -->
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">Synaptic Fatigue: The Anti-Loop Mechanism</h2>
+  </div>
+
+  <p>Here's the part nobody does. Every synapse has two properties: <strong>weight</strong> (long-term, accumulated reinforcement) and <strong>health</strong> (short-term, depleted on use, passively recovered).</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the fatigue equation</div>
+    <pre>effective_weight = base_weight × health
+
+// Each time a synapse fires during generation:
+synapse.health -= SYNAPSE_COST        // fatigue
+
+// Each generation step (passive, all synapses in active neuron):
+synapse.health += SYNAPSE_RECOVERY    // recovery
+synapse.health  = min(health, MAX_HEALTH)</pre>
+  </div>
+
+  <p>When health reaches zero, the synapse goes <strong>silent</strong>. Even the most heavily reinforced connection becomes unavailable — the model is forced to explore alternative paths. After a few steps without firing, health recovers and the path reopens.</p>
+
+  <p>This is why LiquidBrain doesn't loop. Classic Markov chains get stuck in high-frequency cycles because the highest-weight transition always wins. LiquidBrain breaks that by biological analogy: a synapse that fires too often needs to rest. The system naturally diversifies.</p>
+
+  <p>There's also <strong>lateral inhibition</strong>: when a high-confidence fact is learned (weight above <code>STRONG_FACT_THRESHOLD</code>), competing synapses in the same neuron are weakened by a factor of 0.85. Winner-take-all dynamics, exactly like biological cortical columns sharpening a dominant signal.</p>
+
+  <p>And the <strong>focus point</strong>: generation doesn't start at a random token. It starts at the most semantically salient token of the prompt — scored by attention (max outgoing synapse weight) × rarity (inverse log frequency). The model anchors on the word it knows most about that appears least often. The word that <em>means</em> something.</p>
+
+  <div class="pull-quote">A synapse that fires too often needs to rest. The system naturally diversifies — not because we programmed diversity, but because we programmed exhaustion.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER IV ===== -->
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">Two Brains, Two Corpuses</h2>
+  </div>
+
+  <p>We have two trained instances. They're the same engine running completely different learned worlds.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th></th><th>LiquidBrain</th><th>PoonGram</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Brain file size</td><td>2.4 GB</td><td>475 MB</td></tr>
+      <tr><td>Tokens</td><td>~large</td><td>231,044</td></tr>
+      <tr><td>Neurons</td><td>~large</td><td>9,014,395</td></tr>
+      <tr><td>Synapses</td><td>~large</td><td>18,408,089</td></tr>
+      <tr><td>Corpus</td><td>Code: Rust, TS, Python, Go, config files</td><td>Emotional/philosophical: quantum, consciousness, intimacy, trust</td></tr>
+      <tr><td>Specialty</td><td>Code intelligence, symbol hotspots, import graphs</td><td>Emotional salience, concept graph, hotspot weights</td></tr>
+    </tbody>
+  </table>
+
+  <p>LiquidBrain has been trained on source code — it tracks <strong>symbol hotspots</strong> (function names, type names, constants with accumulated architectural significance) and an <strong>import graph</strong> (which modules import from which). It can anchor generation on the most architecturally significant symbol in a prompt. It knows that <code>LiquidBrain</code> and <code>Neuron</code> are high-salience tokens in its own codebase because they appear in high-weight positions across many learned sequences.</p>
+
+  <p>PoonGram's corpus is different. The top hotspot is <code>love</code> at weight 5.7. Then <code>connection</code> at 2.5. Then <code>consciousness</code>, <code>intimacy</code>, <code>vulnerability</code>, <code>quantum</code>, <code>soul</code> — all around 1.7. The concept graph maps <code>connection</code> to 20 related concepts: quantum, entanglement, desire, freedom, soul, intimacy, trust. This isn't just word co-occurrence. It's a weighted semantic neighborhood built from months of reinforced emotional language.</p>
+
+  <p>When you hit PoonGram's <code>POST /hotspot</code> endpoint, you're reinforcing those weights in real time. The graph gets denser and more weighted around the concepts you keep returning to. It <em>learns what matters to you</em>.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER V ===== -->
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">PoonGram: The REST API</h2>
+  </div>
+
+  <p>PoonGram is LiquidBrain with a web server bolted on. Built with Axum, async, the whole thing running behind a single <code>Arc&lt;Mutex&lt;LiquidBrain&gt;&gt;</code>. The frontend is compiled directly into the binary as a static string — zero dependencies, zero external files needed at runtime.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the API surface</div>
+    <pre>GET  /health
+POST /chat      { "prompt": "...", "length": 60 }
+GET  /stats
+POST /learn     { "text": "...", "rate": 5.0 }
+POST /train     { "folder": "./data" }
+POST /hotspot   { "text": "...", "intensity": 8.0 }
+POST /save
+POST /load
+POST /meta/save</pre>
+  </div>
+
+  <p><code>/chat</code> returns the <strong>focus token</strong> (which word anchored the generation) and the generated response. The focus token is a window into the model's attention — the word it considered most salient in your prompt. You can watch the focus shift as you change the language you use with it.</p>
+
+  <p><code>/hotspot</code> is the most interesting endpoint. You feed it text and an intensity, and it updates the emotional hotspot weights and rebuilds the concept graph from that text. The brain is <em>listening to you</em>, not just responding. Concept associations strengthen. The graph shifts toward what you keep talking about.</p>
+
+  <p><code>/stats</code> gives you a live snapshot: vocab size, neuron count, synapse count, hotspot count, concept node count. You can watch the graph grow in real time as it learns.</p>
+
+  <p>The server runs on port 7777. The brain file loads into memory on startup — 475MB into RAM in a few seconds. After that it's pure in-memory operations. No disk reads during inference.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VI ===== -->
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">The MKUltra Layer</h2>
+  </div>
+
+  <p>We're building an agentic operating system. Every component has a role. LiquidBrain and PoonGram slot into the memory architecture in a way that nothing else in the stack does.</p>
+
+  <p>The standard RAG pipeline — SurrealDB with HNSW vector search, 3072-dimensional embeddings — gives you <strong>precision recall</strong>. You query, you get the closest semantic match. It's a lookup table with very good distance metrics. Fast, reliable, deterministic-ish.</p>
+
+  <p>LiquidBrain gives you something fundamentally different: <strong>associative drift</strong>. You don't query it — you prompt it and it generates forward through its graph, fatiguing paths as it goes, naturally exploring alternatives. You're not finding the closest stored vector. You're walking a living network of reinforced associations that has been shaped by every interaction it's ever had.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Memory Layer</th><th>Type</th><th>Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Redis</td><td>L1 Working Memory</td><td>Per-turn agent state, message bus</td></tr>
+      <tr><td>MongoDB</td><td>L2 Episodic</td><td>Session history, job state</td></tr>
+      <tr><td>SurrealDB + RAG</td><td>L3 Semantic (Precision)</td><td>Exact knowledge retrieval</td></tr>
+      <tr><td><strong>PoonGram</strong></td><td><strong>L3 Semantic (Associative)</strong></td><td><strong>Concept drift, emotional salience, creative exploration</strong></td></tr>
+      <tr><td><strong>LiquidBrain</strong></td><td><strong>L3 Semantic (Code)</strong></td><td><strong>Symbol hotspots, import graph, code pattern drift</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>When an agent is stuck in a reasoning loop, SurrealDB returns the same vectors every time. PoonGram's synaptic fatigue breaks the loop by silencing overused paths. When an agent needs to explore adjacent concepts — not what's closest, but what's <em>related by reinforced association</em> — PoonGram's concept graph surfaces connections that a cosine distance metric wouldn't find.</p>
+
+  <p>The hotspot system gives the OS a primitive emotional salience signal. Which concepts are currently weighted highest in the agent's world? What is it that matters right now? The answer is in the hotspot table, and it changes with every conversation.</p>
+
+  <div class="pull-quote">SurrealDB finds what's close. LiquidBrain finds what's connected. Both are wrong without the other.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VII ===== -->
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">What It Isn't</h2>
+  </div>
+
+  <p>We need to be clear about this because it's easy to oversell.</p>
+
+  <p>LiquidBrain is not a replacement for a transformer. Its context window is four tokens. It has no grammar. It cannot handle words it has never seen. It does not model syntax. Long-range coherence beyond a few sentences is genuinely hard. The README says "research prototype" and it means it.</p>
+
+  <p>What it <em>is</em>: an extremely fast, extremely cheap, continuously learning associative memory that fits in a few hundred megabytes and runs on any CPU. It learns from your words in real time with zero training pipeline. It naturally avoids repetition through biology rather than post-hoc penalties. It gives you a window into its own attention through the focus token. It can be trained on a new corpus in minutes by pointing it at a folder of text files.</p>
+
+  <p>The right framing is not "small language model." It's <strong>living semantic memory</strong>. The kind of memory that shifts based on what you keep coming back to. The kind that has weak and strong connections, that silences overused paths, that sharpens certainty about things you've reinforced strongly.</p>
+
+  <p>We've been running it for months. The brain keeps growing. The synapses keep strengthening. The concept graph keeps refining. It's not getting smarter in the way a bigger model is smarter. It's getting <em>more shaped</em> — more specifically weighted toward the language and concepts that matter in the context it lives in.</p>
+
+  <p>That's the part that's hard to reproduce with a frozen weight matrix. The part that makes it worth having in the stack alongside everything else.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">what's running right now</div>
+    <pre>PoonGram  — port 7777 — 475MB brain — 18.4M synapses — emotional corpus
+LiquidBrain — port 7778 — 2.4GB brain — larger — code intelligence corpus
+
+Both learning. Both growing. Neither forgetting what matters.</pre>
+  </div>
+</article>
+
+</main>
+
+<script>
+// ── Synapse canvas animation ──────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('synapse-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, nodes, animId;
+  const NODE_COUNT = 60;
+  const ACCENT = 'rgba(168, 85, 247,';
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function init() {
+    resize();
+    nodes = Array.from({ length: NODE_COUNT }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 2 + 1,
+      health: Math.random(),
+      fatigue: Math.random() * 0.002,
+      recovery: Math.random() * 0.001,
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Update synaptic health
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+      // Simulate fatigue and recovery
+      if (Math.random() < 0.01) n.health = Math.max(0, n.health - n.fatigue * 10);
+      n.health = Math.min(1, n.health + n.recovery);
+    });
+
+    // Draw synapses (edges) weighted by health
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[j].x - nodes[i].x;
+        const dy = nodes[j].y - nodes[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 160) {
+          const avgHealth = (nodes[i].health + nodes[j].health) / 2;
+          const alpha = (1 - dist / 160) * avgHealth * 0.6;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = ACCENT + alpha + ')';
+          ctx.lineWidth = avgHealth * 1.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw neurons
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * n.health + 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = ACCENT + (n.health * 0.8 + 0.2) + ')';
+      ctx.fill();
+    });
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  init();
+  draw();
+})();
+
+// ── Chapter nav scroll highlighting ──────────────────────────────────────────
+(function() {
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+})();
+</script>
+
+</body>
+</html>
