@@ -29,6 +29,127 @@
     color: var(--text-muted);
   }
 
+  /* === PORTAL RING === */
+  .portal-ring {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(2rem, 6vw, 5rem);
+    padding: 4rem 2rem 6rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .portal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    padding: 2rem 1.5rem;
+    border-radius: 50%;
+    width: clamp(130px, 20vw, 180px);
+    height: clamp(130px, 20vw, 180px);
+    justify-content: center;
+    border: 1px solid rgba(var(--portal-rgb), 0.15);
+    background: radial-gradient(circle at center, rgba(var(--portal-rgb), 0.06) 0%, transparent 70%);
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+    animation: portalAppear 0.8s var(--portal-delay) forwards;
+  }
+
+  @keyframes portalAppear {
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .portal-glow {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0%,
+      rgba(var(--portal-rgb), 0.4) 25%,
+      transparent 50%,
+      rgba(var(--portal-rgb), 0.2) 75%,
+      transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    z-index: -1;
+    animation: portalSpin 6s linear infinite;
+    filter: blur(4px);
+  }
+
+  @keyframes portalSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  .portal:hover .portal-glow {
+    opacity: 1;
+  }
+
+  .portal:hover {
+    border-color: rgba(var(--portal-rgb), 0.5);
+    transform: scale(1.1);
+    box-shadow: 0 0 40px rgba(var(--portal-rgb), 0.15), inset 0 0 30px rgba(var(--portal-rgb), 0.05);
+  }
+
+  .portal-icon {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    color: var(--portal-color);
+    margin-bottom: 0.5rem;
+    transition: transform 0.4s ease, text-shadow 0.4s ease;
+    line-height: 1;
+  }
+
+  .portal:hover .portal-icon {
+    transform: scale(1.2);
+    text-shadow: 0 0 20px rgba(var(--portal-rgb), 0.6);
+  }
+
+  .portal-label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--portal-color);
+    transition: color 0.3s ease;
+  }
+
+  .portal-sub {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-top: 0.25rem;
+    transition: color 0.3s ease;
+  }
+
+  .portal:hover .portal-sub {
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 480px) {
+    .portal-ring {
+      gap: 1rem;
+      padding: 3rem 1rem 4rem;
+    }
+    .portal {
+      width: 100px;
+      height: 100px;
+      padding: 1rem;
+    }
+    .portal-sub { display: none; }
+  }
+
   /* === POST GRID === */
   .post-grid {
     position: relative;
@@ -203,6 +324,28 @@
   <div class="hero-scroll">Scroll</div>
 </section>
 
+<!-- ==================== PORTALS ==================== -->
+<div class="portal-ring">
+  <a href="music.html" class="portal" data-glyph="&#9835;" style="--portal-color: #ff2277; --portal-rgb: 255, 34, 119; --portal-delay: 0s;">
+    <div class="portal-icon">&#9835;</div>
+    <div class="portal-label">Music</div>
+    <div class="portal-sub">2,000+ tracks</div>
+    <div class="portal-glow"></div>
+  </a>
+  <a href="art.html" class="portal" data-glyph="&#9670;" style="--portal-color: #ff8800; --portal-rgb: 255, 136, 0; --portal-delay: 0.15s;">
+    <div class="portal-icon">&#9670;</div>
+    <div class="portal-label">Art</div>
+    <div class="portal-sub">Latent visions</div>
+    <div class="portal-glow"></div>
+  </a>
+  <a href="demo/index.html" class="portal" data-glyph="&#9678;" style="--portal-color: #00e5ff; --portal-rgb: 0, 229, 255; --portal-delay: 0.3s;">
+    <div class="portal-icon">&#9678;</div>
+    <div class="portal-label">Demos</div>
+    <div class="portal-sub">Interactive labs</div>
+    <div class="portal-glow"></div>
+  </a>
+</div>
+
 <!-- ==================== POSTS ==================== -->
 <div class="section-header">
   <h2>Field Notes</h2>
@@ -250,23 +393,13 @@
     </div>
   </a>
 
-  <a href="music.html" class="post-card" style="--card-accent: #ff2277; --card-accent-rgb: 255, 34, 119;">
-    <div class="card-number">Discography</div>
-    <h3 class="card-title">Music Gallery</h3>
-    <div class="card-subtitle">2,000+ tracks from chronopocket to quantum-poontanglement. Stream, play, and explore the full iceboks catalog.</div>
+  <a href="posts/beamforge-integration.html" class="post-card" style="--card-accent: #00e5ff; --card-accent-rgb: 0, 229, 255;">
+    <div class="card-number">005 &mdash; March 2026</div>
+    <h3 class="card-title">The Psychosis Engine</h3>
+    <div class="card-subtitle">How we gave our AI a subconscious, accidentally induced psychosis, then built the cure from the disease</div>
     <div class="card-meta">
-      <span>iceboks</span>
-      <span class="card-tag">music</span>
-    </div>
-  </a>
-
-  <a href="art.html" class="post-card" style="--card-accent: #ff8800; --card-accent-rgb: 255, 136, 0;">
-    <div class="card-number">Gallery</div>
-    <h3 class="card-title">Art Gallery</h3>
-    <div class="card-subtitle">Visions from the latent space. ComfyUI generations, conceptual art, and visual explorations.</div>
-    <div class="card-meta">
-      <span>iceboks</span>
-      <span class="card-tag">visual</span>
+      <span>iceboks + claude</span>
+      <span class="card-tag">research</span>
     </div>
   </a>
 
