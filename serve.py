@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 iceboks.site dev server
-Serves static files + handles art gallery uploads.
+Serves static files + handles art gallery and music uploads.
+Auth: set UPLOAD_TOKEN env var. Requests must include Authorization: Bearer <token>
 """
 import os
 import json
 import uuid
-import shutil
+import hmac
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse
 
@@ -14,6 +15,7 @@ SITE_DIR = os.path.dirname(os.path.abspath(__file__))
 ART_DIR = os.path.join(SITE_DIR, 'art', 'images')
 ART_CATALOG = os.path.join(SITE_DIR, 'art', 'catalog.json')
 MUSIC_DIR = os.path.join(SITE_DIR, 'music')
+UPLOAD_TOKEN = os.environ.get('UPLOAD_TOKEN', '')
 
 os.makedirs(ART_DIR, exist_ok=True)
 
@@ -35,12 +37,31 @@ class SiteHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=SITE_DIR, **kwargs)
 
+    def check_auth(self):
+        """Verify Bearer token on upload endpoints. Returns True if authorized."""
+        if not UPLOAD_TOKEN:
+            self.send_error(503, 'UPLOAD_TOKEN not configured on server')
+            return False
+        auth = self.headers.get('Authorization', '')
+        if not auth.startswith('Bearer '):
+            self.send_error(401, 'Missing Authorization: Bearer <token>')
+            return False
+        token = auth[7:]
+        if not hmac.compare_digest(token, UPLOAD_TOKEN):
+            self.send_error(403, 'Invalid token')
+            return False
+        return True
+
     def do_POST(self):
         path = urlparse(self.path).path
 
         if path == '/api/art/upload':
+            if not self.check_auth():
+                return
             self.handle_art_upload()
         elif path == '/api/music/upload':
+            if not self.check_auth():
+                return
             self.handle_music_upload()
         else:
             self.send_error(404)
@@ -182,15 +203,17 @@ class SiteHandler(SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
 
 
 if __name__ == '__main__':
     port = 8090
+    token_status = 'SET' if UPLOAD_TOKEN else 'NOT SET (uploads will fail)'
     print(f"\niceboks.site dev server")
     print(f"  http://localhost:{port}")
     print(f"  Art uploads  → art/images/")
-    print(f"  Music uploads → music/mp3/\n")
+    print(f"  Music uploads → music/mp3/")
+    print(f"  UPLOAD_TOKEN: {token_status}\n")
     server = HTTPServer(('0.0.0.0', port), SiteHandler)
     server.serve_forever()
