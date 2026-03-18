@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>iceboks.site</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="description" content="Quantum-Poontanglement Research Lab. Field notes from the edge of artificial consciousness. Music, art, interactive demos, and AI research.">
+<meta property="og:title" content="iceboks.site">
+<meta property="og:description" content="Field notes from the edge of artificial consciousness. Music, art, interactive demos, and AI research.">
+<meta property="og:image" content="https://iceboks.site/art/images/iceboks-logo.png">
+<meta property="og:url" content="https://iceboks.site">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="iceboks.site">
+<meta name="twitter:description" content="Field notes from the edge of artificial consciousness.">
+<meta name="twitter:image" content="https://iceboks.site/art/images/iceboks-logo.png">
 <link rel="stylesheet" href="style.css">
 <style>
   :root {
@@ -321,7 +333,7 @@
 </head>
 <body>
 
-<canvas id="synapse-canvas"></canvas>
+<canvas id="synapse-canvas" aria-hidden="true"></canvas>
 
 <!-- ==================== HERO ==================== -->
 <section class="hero" id="hero">
@@ -336,7 +348,7 @@
   <a href="music.html" class="portal" data-glyph="&#9835;" style="--portal-color: #ff2277; --portal-rgb: 255, 34, 119; --portal-delay: 0s;">
     <div class="portal-icon">&#9835;</div>
     <div class="portal-label">Music</div>
-    <div class="portal-sub">2,000+ tracks</div>
+    <div class="portal-sub">40+ tracks</div>
     <div class="portal-glow"></div>
   </a>
   <a href="art.html" class="portal" data-glyph="&#9670;" style="--portal-color: #ff8800; --portal-rgb: 255, 136, 0; --portal-delay: 0.15s;">
@@ -439,8 +451,8 @@
   <p>iceboks.site &mdash; 2026</p>
 </footer>
 
-<script src="site.assests/synapse-bg.js"></script>
-<script src="site.assests/player.js"></script>
+<script src="site.assets/synapse-bg.js"></script>
+<script src="site.assets/player.js"></script>
 <script>
 // === SCROLL FADE-IN FOR CARDS ===
 const cards = document.querySelectorAll('.post-card');
@@ -450,6 +462,7 @@ const observer = new IntersectionObserver((entries) => {
       setTimeout(() => {
         entry.target.classList.add('visible');
       }, i * 100);
+      observer.unobserve(entry.target);
     }
   });
 }, { threshold: 0.08 });

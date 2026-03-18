@@ -178,7 +178,12 @@
       fireNode(Math.floor(Math.random() * nodes.length));
     }
 
-    requestAnimationFrame(animate);
+    if (!document.hidden) requestAnimationFrame(animate);
   }
   animate();
 })();
+
+  // Resume animation when tab becomes visible again
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) animate();
+  });
