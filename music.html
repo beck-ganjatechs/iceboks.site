@@ -65,32 +65,34 @@
   .search-box::placeholder { color: var(--text-muted); }
   .search-box:focus { border-color: var(--accent-dim); }
 
-  .filter-tabs {
-    display: flex;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .filter-tab {
-    padding: 0.4rem 0.8rem;
+  .genre-select {
+    padding: 0.5rem 2rem 0.5rem 0.8rem;
     background: var(--bg-surface);
     border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 6px;
-    color: var(--text-dim);
+    border-radius: 8px;
+    color: var(--text);
     font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.3s;
+    outline: none;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a8578'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    min-width: 140px;
   }
 
-  .filter-tab:hover { border-color: var(--accent-dim); color: var(--text); }
-  .filter-tab.active {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: #fff;
+  .genre-select:hover, .genre-select:focus { border-color: var(--accent-dim); }
+
+  .genre-select option {
+    background: var(--bg-surface);
+    color: var(--text);
   }
 
   .upload-section {
@@ -662,9 +664,9 @@
 
 <div class="controls-bar">
   <input type="text" class="search-box" id="searchBox" placeholder="Search tracks..." />
-  <div class="filter-tabs" id="filterTabs">
-    <button class="filter-tab active" data-filter="all">All</button>
-  </div>
+  <select class="genre-select" id="genreSelect">
+    <option value="all">All Genres</option>
+  </select>
 </div>
 
 <div class="song-grid" id="songGrid"></div>
@@ -703,81 +705,8 @@
   </div>
 </div>
 
+<script src="site.assests/synapse-bg.js"></script>
 <script>
-(function() {
-  var canvas = document.getElementById('synapse-canvas');
-  var ctx = canvas.getContext('2d');
-  var nodes = [];
-  var NODE_COUNT = 50;
-  var CONNECTION_DIST = 150;
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  function Node() {
-    this.x = Math.random() * canvas.width;
-    this.y = Math.random() * canvas.height;
-    this.vx = (Math.random() - 0.5) * 0.25;
-    this.vy = (Math.random() - 0.5) * 0.25;
-    this.r = Math.random() * 2 + 0.5;
-    this.pulse = Math.random() * Math.PI * 2;
-  }
-
-  Node.prototype.update = function() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.pulse += 0.015;
-    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-  };
-
-  Node.prototype.draw = function() {
-    var alpha = 0.3 + Math.sin(this.pulse) * 0.2;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 34, 119, ' + alpha + ')';
-    ctx.fill();
-  };
-
-  for (var i = 0; i < NODE_COUNT; i++) nodes.push(new Node());
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (var i = 0; i < nodes.length; i++) {
-      nodes[i].update();
-      nodes[i].draw();
-      for (var j = i + 1; j < nodes.length; j++) {
-        var dx = nodes[i].x - nodes[j].x;
-        var dy = nodes[i].y - nodes[j].y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < CONNECTION_DIST) {
-          var alpha = (1 - dist / CONNECTION_DIST) * 0.12;
-          ctx.beginPath();
-          ctx.moveTo(nodes[i].x, nodes[i].y);
-          ctx.lineTo(nodes[j].x, nodes[j].y);
-          ctx.strokeStyle = 'rgba(153, 0, 51, ' + alpha + ')';
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-          if ((i + j) % 5 === 0) {
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = 'rgba(255, 68, 153, ' + (alpha * 0.5) + ')';
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-    }
-    requestAnimationFrame(animate);
-  }
-  animate();
-})();
-
 (function() {
   var audio = new Audio();
   var catalog = [];
@@ -788,7 +717,7 @@
 
   var songGrid = document.getElementById('songGrid');
   var searchBox = document.getElementById('searchBox');
-  var filterTabs = document.getElementById('filterTabs');
+  var genreSelect = document.getElementById('genreSelect');
   var nowPlaying = document.getElementById('nowPlaying');
   var npCover = document.getElementById('npCover');
   var npTitle = document.getElementById('npTitle');
@@ -830,7 +759,7 @@
           });
         }
       });
-      buildFilterTabs();
+      buildGenreDropdown();
       renderGrid();
     })
     .catch(function() {
@@ -855,14 +784,13 @@
     songGrid.appendChild(el);
   }
 
-  function buildFilterTabs() {
+  function buildGenreDropdown() {
     var sorted = Array.from(genres).sort();
     sorted.forEach(function(g) {
-      var btn = document.createElement('button');
-      btn.className = 'filter-tab';
-      btn.dataset.filter = g;
-      btn.textContent = g;
-      filterTabs.appendChild(btn);
+      var opt = document.createElement('option');
+      opt.value = g;
+      opt.textContent = g;
+      genreSelect.appendChild(opt);
     });
   }
 
@@ -1051,17 +979,13 @@
     applyFilters();
   });
 
-  filterTabs.addEventListener('click', function(e) {
-    if (!e.target.classList.contains('filter-tab')) return;
-    filterTabs.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
-    e.target.classList.add('active');
+  genreSelect.addEventListener('change', function() {
     applyFilters();
   });
 
   function applyFilters() {
     var query = searchBox.value.toLowerCase().trim();
-    var activeTab = filterTabs.querySelector('.filter-tab.active');
-    var filter = activeTab ? activeTab.dataset.filter : 'all';
+    var filter = genreSelect.value;
 
     filteredCatalog = catalog.filter(function(s) {
       var matchesSearch = !query || s.title.toLowerCase().indexOf(query) !== -1 || (s.style && s.style.toLowerCase().indexOf(query) !== -1);
