@@ -368,18 +368,6 @@
     text-overflow: ellipsis;
   }
 
-  .song-link {
-    display: inline-block;
-    margin-top: 0.3rem;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.6rem;
-    color: var(--accent-dim);
-    text-decoration: none;
-    transition: color 0.3s;
-  }
-
-  .song-link:hover { color: var(--accent-light); }
-
   .empty-state {
     grid-column: 1 / -1;
     text-align: center;
@@ -849,17 +837,8 @@
       styleEl.className = 'song-style';
       styleEl.textContent = song.style || 'untagged';
 
-      var linkEl = document.createElement('a');
-      linkEl.className = 'song-link';
-      linkEl.href = 'https://suno.com/song/' + encodeURIComponent(song.songId);
-      linkEl.target = '_blank';
-      linkEl.rel = 'noopener';
-      linkEl.textContent = 'suno \u2192';
-      linkEl.addEventListener('click', function(e) { e.stopPropagation(); });
-
       info.appendChild(titleEl);
       info.appendChild(styleEl);
-      info.appendChild(linkEl);
 
       card.appendChild(coverWrap);
       card.appendChild(info);
