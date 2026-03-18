@@ -664,95 +664,18 @@
   <p>iceboks.site &mdash; 2026</p>
 </footer>
 
-<div class="now-playing" id="nowPlaying">
-  <div class="np-progress-wrap" id="npProgressWrap">
-    <div class="np-progress-fill" id="npProgressFill"></div>
-  </div>
-  <div class="np-content">
-    <img class="np-cover" id="npCover" src="" alt="" />
-    <div class="np-info">
-      <div class="np-title" id="npTitle">--</div>
-      <div class="np-style" id="npStyle">--</div>
-    </div>
-    <div class="np-controls">
-      <button class="np-btn" id="npPrev" title="Previous">
-        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
-      </button>
-      <button class="np-btn play-pause" id="npPlayPause" title="Play/Pause">
-        <svg viewBox="0 0 24 24" id="npPlayIcon"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <button class="np-btn" id="npNext" title="Next">
-        <svg viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
-      </button>
-    </div>
-    <div class="np-time" id="npTime">0:00 / 0:00</div>
-    <div class="np-volume">
-      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-      <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="0.8" />
-    </div>
-  </div>
-</div>
-
 <script src="site.assests/synapse-bg.js"></script>
+<script src="site.assests/player.js"></script>
 <script>
+// Music page grid — uses shared icePlayer for playback
 (function() {
-  var audio = new Audio();
   var catalog = [];
   var filteredCatalog = [];
-  var currentIndex = -1;
-  var isPlaying = false;
   var genres = new Set();
 
   var songGrid = document.getElementById('songGrid');
   var searchBox = document.getElementById('searchBox');
   var genreSelect = document.getElementById('genreSelect');
-  var nowPlaying = document.getElementById('nowPlaying');
-  var npCover = document.getElementById('npCover');
-  var npTitle = document.getElementById('npTitle');
-  var npStyle = document.getElementById('npStyle');
-  var npPlayPause = document.getElementById('npPlayPause');
-  var npPlayIcon = document.getElementById('npPlayIcon');
-  var npPrev = document.getElementById('npPrev');
-  var npNext = document.getElementById('npNext');
-  var npTime = document.getElementById('npTime');
-  var npProgressWrap = document.getElementById('npProgressWrap');
-  var npProgressFill = document.getElementById('npProgressFill');
-  var volumeSlider = document.getElementById('volumeSlider');
-
-  audio.volume = 0.8;
-
-  function fmt(s) {
-    if (isNaN(s)) return '0:00';
-    var m = Math.floor(s / 60);
-    var sec = Math.floor(s % 60);
-    return m + ':' + (sec < 10 ? '0' : '') + sec;
-  }
-
-  function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  fetch('music/catalog.json')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      catalog = data;
-      filteredCatalog = catalog.slice();
-      catalog.forEach(function(s) {
-        if (s.style) {
-          s.style.split(',').forEach(function(g) {
-            var gt = g.trim().toLowerCase();
-            if (gt) genres.add(gt);
-          });
-        }
-      });
-      buildGenreDropdown();
-      renderGrid();
-    })
-    .catch(function() {
-      showEmpty('No tracks found', 'Add music/catalog.json to get started');
-    });
 
   function showEmpty(msg, hint) {
     var el = document.createElement('div');
@@ -784,22 +707,22 @@
 
   function renderGrid() {
     while (songGrid.firstChild) songGrid.removeChild(songGrid.firstChild);
-
     if (filteredCatalog.length === 0) {
       showEmpty('No matches found', 'Try a different search or filter');
       return;
     }
 
+    var currentIndex = window.icePlayer ? window.icePlayer.getCurrentIndex() : -1;
+
     filteredCatalog.forEach(function(song, i) {
       var card = document.createElement('div');
       card.className = 'song-card';
-      if (currentIndex >= 0 && catalog[currentIndex].songId === song.songId) {
+      if (currentIndex >= 0 && catalog[currentIndex] && catalog[currentIndex].songId === song.songId) {
         card.classList.add('playing');
       }
 
       var coverWrap = document.createElement('div');
       coverWrap.className = 'song-cover-wrap';
-
       var img = document.createElement('img');
       img.className = 'song-cover';
       img.src = 'music/covers/' + encodeURIComponent(song.songId) + '.jpeg';
@@ -822,21 +745,17 @@
       playSvg.appendChild(playPath);
       playBtn.appendChild(playSvg);
       overlay.appendChild(playBtn);
-
       coverWrap.appendChild(img);
       coverWrap.appendChild(overlay);
 
       var info = document.createElement('div');
       info.className = 'song-info';
-
       var titleEl = document.createElement('div');
       titleEl.className = 'song-title';
       titleEl.textContent = song.title;
-
       var styleEl = document.createElement('div');
       styleEl.className = 'song-style';
       styleEl.textContent = song.style || 'untagged';
-
       info.appendChild(titleEl);
       info.appendChild(styleEl);
 
@@ -845,127 +764,57 @@
 
       var catalogIdx = catalog.indexOf(song);
       card.addEventListener('click', (function(idx) {
-        return function() { playSong(idx); };
+        return function() {
+          if (window.icePlayer) window.icePlayer.playSong(idx);
+          setTimeout(renderGrid, 100);
+        };
       })(catalogIdx));
 
       songGrid.appendChild(card);
-
       card.style.opacity = '0';
       card.style.transition = 'opacity 0.5s ease, transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease';
-      setTimeout((function(c) {
-        return function() { c.style.opacity = '1'; };
-      })(card), i * 40);
+      setTimeout((function(c) { return function() { c.style.opacity = '1'; }; })(card), i * 40);
     });
   }
 
-  function playSong(index) {
-    if (index < 0 || index >= catalog.length) return;
-    var song = catalog[index];
-
-    if (isPlaying && audio.volume > 0) {
-      var fadeVol = audio.volume;
-      var fadeOut = setInterval(function() {
-        fadeVol -= 0.05;
-        if (fadeVol <= 0.05) {
-          clearInterval(fadeOut);
-          audio.volume = 0;
-          loadAndPlay(song, index);
-        } else {
-          audio.volume = fadeVol;
-        }
-      }, 30);
-    } else {
-      loadAndPlay(song, index);
+  function init() {
+    catalog = window.icePlayer ? window.icePlayer.getCatalog() : [];
+    if (!catalog.length) {
+      fetch('music/catalog.json')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          catalog = data;
+          filteredCatalog = catalog.slice();
+          extractGenres();
+          buildGenreDropdown();
+          renderGrid();
+        })
+        .catch(function() { showEmpty('No tracks found', 'Add music/catalog.json'); });
+      return;
     }
-  }
-
-  function loadAndPlay(song, index) {
-    currentIndex = index;
-    audio.src = 'music/mp3/' + encodeURIComponent(song.songId) + '.mp3';
-    audio.volume = parseFloat(volumeSlider.value);
-    audio.play().catch(function() {});
-    isPlaying = true;
-    updateNowPlaying(song);
-    updatePlayIcon();
+    filteredCatalog = catalog.slice();
+    extractGenres();
+    buildGenreDropdown();
     renderGrid();
   }
 
-  function updateNowPlaying(song) {
-    nowPlaying.classList.add('active');
-    npCover.src = 'music/covers/' + encodeURIComponent(song.songId) + '.jpeg';
-    npTitle.textContent = song.title;
-    npStyle.textContent = song.style || 'untagged';
+  function extractGenres() {
+    catalog.forEach(function(s) {
+      if (s.style) {
+        s.style.split(',').forEach(function(g) {
+          var gt = g.trim().toLowerCase();
+          if (gt) genres.add(gt);
+        });
+      }
+    });
   }
 
-  function updatePlayIcon() {
-    while (npPlayIcon.firstChild) npPlayIcon.removeChild(npPlayIcon.firstChild);
-    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    if (isPlaying) {
-      path.setAttribute('d', 'M6 19h4V5H6zm8-14v14h4V5z');
-    } else {
-      path.setAttribute('d', 'M8 5v14l11-7z');
-    }
-    npPlayIcon.appendChild(path);
-  }
-
-  npPlayPause.addEventListener('click', function() {
-    if (currentIndex < 0) return;
-    if (isPlaying) {
-      audio.pause();
-      isPlaying = false;
-    } else {
-      audio.play().catch(function() {});
-      isPlaying = true;
-    }
-    updatePlayIcon();
-  });
-
-  npPrev.addEventListener('click', function() {
-    if (catalog.length === 0) return;
-    var idx = currentIndex <= 0 ? catalog.length - 1 : currentIndex - 1;
-    playSong(idx);
-  });
-
-  npNext.addEventListener('click', function() {
-    if (catalog.length === 0) return;
-    var idx = currentIndex >= catalog.length - 1 ? 0 : currentIndex + 1;
-    playSong(idx);
-  });
-
-  audio.addEventListener('timeupdate', function() {
-    var pct = (audio.currentTime / audio.duration) * 100 || 0;
-    npProgressFill.style.width = pct + '%';
-    npTime.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
-  });
-
-  audio.addEventListener('ended', function() {
-    var idx = currentIndex >= catalog.length - 1 ? 0 : currentIndex + 1;
-    playSong(idx);
-  });
-
-  npProgressWrap.addEventListener('click', function(e) {
-    if (!audio.duration) return;
-    var rect = npProgressWrap.getBoundingClientRect();
-    var pct = (e.clientX - rect.left) / rect.width;
-    audio.currentTime = pct * audio.duration;
-  });
-
-  volumeSlider.addEventListener('input', function() {
-    audio.volume = parseFloat(volumeSlider.value);
-  });
-
-  searchBox.addEventListener('input', function() {
-    applyFilters();
-  });
-
-  genreSelect.addEventListener('change', function() {
-    applyFilters();
-  });
+  searchBox.addEventListener('input', applyFilters);
+  genreSelect.addEventListener('change', applyFilters);
 
   function applyFilters() {
     var query = searchBox.value.toLowerCase().trim();
     var filter = genreSelect.value;
-
     filteredCatalog = catalog.filter(function(s) {
       var matchesSearch = !query || s.title.toLowerCase().indexOf(query) !== -1 || (s.style && s.style.toLowerCase().indexOf(query) !== -1);
       var matchesFilter = filter === 'all' || (s.style && s.style.toLowerCase().indexOf(filter) !== -1);
@@ -997,26 +846,19 @@
 
   uploadBtn.addEventListener('click', function() {
     var title = document.getElementById('uploadTitle').value.trim();
-    var style = document.getElementById('uploadStyle').value.trim();
-    if (!title) {
-      uploadMsg.textContent = 'Please enter a song title.';
-      uploadMsg.style.display = 'block';
-      return;
-    }
-
+    if (!title) { uploadMsg.textContent = 'Please enter a song title.'; uploadMsg.style.display = 'block'; return; }
     uploadProgress.style.display = 'block';
     uploadMsg.style.display = 'none';
     var pct = 0;
     var interval = setInterval(function() {
       pct += Math.random() * 15 + 5;
       if (pct >= 100) {
-        pct = 100;
-        clearInterval(interval);
+        pct = 100; clearInterval(interval);
         uploadProgressBar.style.width = '100%';
         setTimeout(function() {
           uploadProgress.style.display = 'none';
           uploadProgressBar.style.width = '0%';
-          uploadMsg.textContent = 'Song added to library: "' + title + '"';
+          uploadMsg.textContent = 'Song added: "' + title + '"';
           uploadMsg.style.display = 'block';
           document.getElementById('uploadTitle').value = '';
           document.getElementById('uploadStyle').value = '';
@@ -1026,12 +868,16 @@
     }, 200);
   });
 
-  document.addEventListener('keydown', function(e) {
-    if (e.target.tagName === 'INPUT') return;
-    if (e.code === 'Space') { e.preventDefault(); npPlayPause.click(); }
-    if (e.code === 'ArrowLeft') npPrev.click();
-    if (e.code === 'ArrowRight') npNext.click();
-  });
+  // Hook: player.js calls this when catalog is loaded
+  window.iceMusicPageReady = function() {
+    catalog = window.icePlayer.getCatalog();
+    filteredCatalog = catalog.slice();
+    extractGenres();
+    buildGenreDropdown();
+    renderGrid();
+  };
+
+  init();
 })();
 </script>
 
