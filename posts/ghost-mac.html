@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GHOST.MAC — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #00ff88;
+    --green-light: #33ffaa;
+    --green-dim: #007744;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(0, 255, 136, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(0, 255, 136, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(0, 255, 136, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(0, 255, 136, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(0, 255, 136, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(0, 255, 136, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(0, 255, 136, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(0, 255, 136, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(0, 255, 136, 0.04);
+    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 136, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(0, 255, 136, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(0, 255, 136, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<!-- DESKTOP NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Research</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">The Ghost</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Arsenal</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">The Command Center</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Hunt</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">The Lesson</span><span class="dot"></span></a>
+</nav>
+
+<!-- MOBILE NAV -->
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">The Research</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">The Ghost</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">The Arsenal</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">The Command Center</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">The Hunt</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">The Lesson</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-title">GHOST.MAC</div>
+  <div class="hero-subtitle">How a deep dive into arXiv research papers led to building a multi-radio surveillance apparatus to hunt an entity on the network that didn't want to be found</div>
+  <div class="hero-byline">iceboks &mdash; 2025</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<!-- ===== CHAPTER 1: THE RESEARCH ===== -->
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Research</h2>
+  </div>
+
+  <p>It started the way a lot of things start: with curiosity that didn't have a target yet.</p>
+
+  <p>At some point — before the ghost, before the arsenal, before any of this had a name — iceboks built <strong>google.network.fucker</strong>. A Python pipeline that hit the arXiv API across seven search terms: network traffic analysis, network anomaly detection, traffic classification neural, deep learning network traffic, autoencoder network traffic, network intrusion detection, network security machine learning. It pulled hundreds of papers, deduplicated them, then fed the twenty most recent into Gemini with a single question: <em>what does the state of the art actually know about catching things that hide on networks?</em></p>
+
+  <p>No specific threat in mind. No ghost yet. Just a man who wanted to understand the academic landscape of network intelligence before he built anything in it. The same instinct that makes you read the map before you start driving.</p>
+
+  <p>What came back was a synthesis of a decade of research: behavioral fingerprinting, cross-layer correlation, temporal analysis of traffic patterns, autoencoder anomaly detection, the p0f-style passive OS identification from TCP SYN options and DHCP parameter lists. The core insight buried across all of it was simple and devastating: <em>you cannot change every tell at once.</em> A device can randomize its MAC. It cannot simultaneously randomize its DHCP option 55 fingerprint, its TTL, its mDNS behavior, its BLE advertising interval, and its TCP stack characteristics. Change one layer and the others betray you.</p>
+
+  <p>iceboks read all of it. Filed it. Moved on.</p>
+
+  <p>He didn't know yet what he'd just loaded into his brain. But the knowledge was there, sitting in the subconscious like a loaded weapon waiting for a reason to be picked up.</p>
+
+  <p>The reason showed up on his network.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 2: THE GHOST ===== -->
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">The Ghost</h2>
+  </div>
+
+  <p>The MAC address was <code>00:11:22:ab:cd:ee</code>.</p>
+
+  <p>If you know anything about MAC addresses, you already know that's not a real one. The first three bytes are the OUI — the manufacturer identifier, assigned by the IEEE. <code>00:11:22</code> doesn't belong to any manufacturer. It's a placeholder. A joke. Sequential hex climbing from zero like someone typed it in by hand to fill a field. This wasn't a device that accidentally ended up on the network. This was a device that deliberately put on a mask and then made the mask obvious — a middle finger disguised as a fingerprint.</p>
+
+  <p>Normal tools bounced off it. <code>arp -a</code> would show it, and then it would be gone. <code>nmap</code> couldn't get a consistent read. The device appeared and disappeared on a schedule that didn't map to any known power cycle. It was on the <code>10.0.0.0/24</code> subnet, it was generating traffic, and it was actively working to not be understood.</p>
+
+  <div class="pull-quote">Something was on the network that didn't want to be found. And it was good at it.</div>
+
+  <p>The question wasn't whether to find it. The question was how to build the tools capable of seeing it — because the tools that existed weren't enough. Commercial solutions cost a fortune and require you to trust someone else's black box. Calling the ISP would produce nothing useful. The only real option was the one iceboks always lands on: build it yourself.</p>
+
+  <p>The arXiv research that had been sitting dormant in his head suddenly had a job.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 3: THE ARSENAL ===== -->
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">The Arsenal</h2>
+  </div>
+
+  <p>The core insight from the research: you can't catch a device that hides on one layer by watching only one layer. You have to watch all of them simultaneously and let the cross-layer contradictions surface the truth.</p>
+
+  <p>So that's what got built. Layer by layer, radio by radio, protocol by protocol. The <strong>recon</strong> framework — a multi-radio surveillance orchestrator covering every wireless protocol stack that a device on a modern home network could possibly use.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Layer</th><th>Module</th><th>What It Watches</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>L1/L2 WiFi</td><td><code>wifi_monitor</code></td><td>Raw 802.11 frames, radiotap headers, EAPOL handshakes, live PSK decryption</td></tr>
+      <tr><td>L1/L2 BLE</td><td><code>ble_scanner</code></td><td>Bluetooth LE advertising, passive scan, GATT enumeration</td></tr>
+      <tr><td>L1 LoRa</td><td><code>lora_bridge</code></td><td>T-Beam S3 Core serial, 915MHz ISM band, GPS correlation</td></tr>
+      <tr><td>L2/L3 Net</td><td><code>passive_net</code></td><td>ARP, NDP, DHCP, DNS, TCP session tracking — all passive, zero injection</td></tr>
+      <tr><td>L7 MQTT</td><td><code>mqtt_tap</code></td><td>Broker subscription tap, auto-discovery, protobuf decode</td></tr>
+      <tr><td>L2 Zigbee</td><td><code>zigbee_sniffer</code></td><td>802.15.4 frames, channels 11–26, CC2531 via whsniff</td></tr>
+      <tr><td>L1 NRF24</td><td><code>nrf24_monitor</code></td><td>Nordic 2.4GHz — keyboards, mice, drones, wireless sensors</td></tr>
+      <tr><td>L1 RFM69</td><td><code>sdr_scanner</code></td><td>900MHz and 433MHz ISM — IoT, garage doors, environmental sensors</td></tr>
+      <tr><td>L1 RFID/NFC</td><td><code>proxmark</code></td><td>Proxmark3, LF 125kHz and HF 13.56MHz, ISO14443/ISO15693</td></tr>
+    </tbody>
+  </table>
+
+  <p>Every observation from every module feeds into a single event bus. That bus feeds a fingerprinting engine that builds a cross-layer profile for every MAC it sees. OUI vendor lookup. TTL-based OS guess. TCP SYN option fingerprint in the p0f style — exactly what the arXiv papers had described. DHCP option 55 parameter request list mapped to OS and firmware signatures. mDNS service types decoded to device role. BLE company ID and service UUID mapped to device class. HTTP User-Agent captured passively. All of it scored and weighted into a composite confidence number.</p>
+
+  <div class="pull-quote">A device can lie on one layer. It cannot lie on all of them simultaneously.</div>
+
+  <p>The ghost could randomize its MAC. It could not simultaneously randomize its DHCP fingerprint, its TCP stack characteristics, its traffic timing patterns, and its behavior on every radio band. The composite score would find the seams.</p>
+
+  <p>Everything landed in SQLite. Devices table. WiFi frames table. EAPOL handshakes. BLE advertisements. Network sessions. Every observation timestamped, indexed, queryable. The database as memory — associations strengthening through repetition, patterns emerging from accumulation.</p>
+
+  <p>Sound familiar.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 4: THE COMMAND CENTER ===== -->
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">The Command Center</h2>
+  </div>
+
+  <p>Intelligence without a way to act on it is just noise. So on top of the passive surveillance stack, there's <strong>cc.py</strong> — a full-screen TUI command center that turns all that data into a live operational picture.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">cc.py — layout</div>
+    <pre>┌─ ALERTS ──────────────────────────────────────────────────────────────┐
+├─ DEVICES ─────────────────────┬─ LIVE FEED ────────────────────────── ┤
+│                               │                                       │
+├─ OUTPUT ──────────────────────┴─ STATS ───────────────────────────────┤
+└─ cc> ─────────────────────────────────────────────────────────────────┘</pre>
+  </div>
+
+  <p>Live device table. Alert feed. Output log. Stats panel. And a command interface that lets you go from observation to action without leaving the terminal:</p>
+
+  <ul class="opt-list">
+    <li><strong>scan &lt;ip&gt;</strong> — nmap -O -sV on demand, OS fingerprint and service banner in the output pane</li>
+    <li><strong>intercept &lt;target&gt; &lt;gw&gt;</strong> — ARP poison target↔gateway, full MITM, traffic flowing through you</li>
+    <li><strong>deauth &lt;client&gt; &lt;ap&gt;</strong> — 802.11 deauthentication frames, watch what the device does when it reconnects</li>
+    <li><strong>hop</strong> — WiFi channel hopping across 2.4GHz and 5GHz, catching frames on every channel</li>
+    <li><strong>gatt &lt;mac&gt;</strong> — full BLE GATT service enumeration, what the device is advertising over Bluetooth</li>
+    <li><strong>lora-tx &lt;hex&gt;</strong> — transmit raw LoRa payload over the T-Beam, 915MHz injection</li>
+    <li><strong>rfid</strong> — one-shot Proxmark3 HF card read, catch anything broadcasting on 13.56MHz</li>
+    <li><strong>ghost</strong> — show current MAC spoofing status on the monitoring interface</li>
+  </ul>
+
+  <p>This is the difference between a monitoring system and a surveillance apparatus. Monitoring watches. Surveillance watches, records, correlates, and responds. The command center is where passive intelligence becomes active investigation.</p>
+
+  <div class="big-quote">You're not watching a network anymore. You're owning it.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 5: THE HUNT ===== -->
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Hunt</h2>
+  </div>
+
+  <p>The ghost was good. But the ghost wasn't perfect.</p>
+
+  <p>A device that randomizes its MAC to <code>00:11:22:ab:cd:ee</code> — a MAC so obviously fake it reads as intentional provocation — is not trying to blend in. It's trying to be uncategorizable. The assumption is that if you can't tag it, you can't track it. And against most tooling, that's true.</p>
+
+  <p>But the cross-layer fingerprinting engine doesn't care about the MAC. The MAC is just one data point. What it cares about is everything else the device can't change.</p>
+
+  <p>Every time the ghost appeared on the network, it left traces across layers it didn't know were being watched. The DHCP request carried an option 55 parameter list — a specific sequence of requested options that maps to an OS or firmware with high confidence. The TCP SYN packets carried a window size, options ordering, and flags combination that the p0f fingerprint table could classify. The timing between probe requests and association frames had a pattern. The signal strength gradient across channels suggested a physical location.</p>
+
+  <p>None of these individual tells were conclusive. Together, with composite confidence scoring, the picture sharpened.</p>
+
+  <p>The academic research iceboks had absorbed through the arXiv pipeline — all those papers on behavioral fingerprinting, traffic classification, anomaly detection — wasn't abstract anymore. It was the operating manual for exactly this scenario. The researchers who wrote those papers were describing techniques for catching exactly this kind of thing, and every technique they described had been implemented, module by module, in the recon stack.</p>
+
+  <div class="pull-quote">The research wasn't preparation for the ghost. The research <em>was</em> the ghost hunt, running in the background of his mind for months before the ghost ever showed up.</div>
+
+  <p>That's the thing about absorbing knowledge without a specific target: when the target arrives, you're already ready. The weapon was loaded before the threat materialized. The google.network.fucker arXiv pipeline had done its job so far upstream that iceboks had forgotten it was doing it at all.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 6: THE LESSON ===== -->
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">The Lesson</h2>
+  </div>
+
+  <p>There's a version of this story where iceboks calls his ISP. Where he buys a Darktrace license or an Ubiquiti Threat Management subscription. Where he outsources the problem to someone else's black box and gets a dashboard that says "anomalous device detected" with no depth underneath it.</p>
+
+  <p>That's not the version that happened.</p>
+
+  <p>The version that happened is: a man built a network traffic analysis research pipeline to understand the academic state of the art, absorbed that knowledge into his operating system, watched something show up on his network that shouldn't be there, and then built — from scratch, across nine radio protocols and every wireless layer — the exact surveillance apparatus the research described as necessary to catch it.</p>
+
+  <p>No vendor. No subscription. No trust in anyone else's interpretation of what's on his network. Open source all the way down. A Proxmark3, a T-Beam, a dedicated monitor adapter, a SQLite database, and a Python orchestrator running in a terminal he built himself.</p>
+
+  <p>This is what the hood sysadmin actually looks like. Not the person who buys the enterprise tool. The person who reads the papers, builds the tool, and runs it themselves — because the network is theirs and the intelligence is theirs and nobody gets to intermediate that relationship.</p>
+
+  <div class="big-quote">You don't buy network ownership. You build it. And you build it before you need it — because when you need it, it's too late to start from scratch.</div>
+
+  <p>The ghost is still being investigated. The recon stack is still running. The database is still accumulating observations. The composite confidence score is still converging.</p>
+
+  <p>And somewhere on <code>10.0.0.0/24</code>, something with MAC address <code>00:11:22:ab:cd:ee</code> is still out there — running out of layers to hide behind.</p>
+
+  <div class="mic-drop">You can change your MAC. You can't change everything.</div>
+</article>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <p>Tools: Python, arXiv API, Google Gemini, Scapy, BlueZ, T-Beam S3 Core, Proxmark3, CC2531, SQLite, Rich TUI</p>
+  <p>Protocols monitored: 802.11, BLE, LoRa 915MHz, ARP/DHCP/DNS/TCP, MQTT, Zigbee 802.15.4, NRF24L01, RFM69 900MHz/433MHz, RFID LF/HF</p>
+  <p>Research pipeline: <a href="https://github.com/beck-ganjatechs/google.network.fucker" style="color: var(--green-dim);">google.network.fucker</a> &mdash; arXiv &times; Gemini &times; network security</p>
+  <p>The ghost is still out there. The hunt continues.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+<script src="../site.assets/player.js"></script>
+
+<script>
+// === SCROLL FADE-IN ===
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08 });
+
+chapters.forEach(ch => observer.observe(ch));
+
+// === ACTIVE NAV ===
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) {
+      current = section.id;
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>
