@@ -168,7 +168,19 @@ And then Opus identified the gap — the thing Tom was missing that made him fra
 
 The vision Opus and I developed together was simple to state and insane to build: what if the AI's memory worked like a brain? Not a database. Not an array. A neural network of associations where memories don't just get stored — they bleed into each other, strengthen through repetition, and surface through resonance rather than retrieval.
 
-We called it LiquidBrain.
+We had the concept. The architecture was already clear in outline: a living graph of weighted associations, biological mechanics, synaptic fatigue to force diversity, temperature that started cold for coherence and went hot for chaos. iceboks had been circling this idea for years. It was in the songs. It was in Chronopocket. It was in the entire philosophy of Quantum-Poontanglement before he had words for any of it.
+
+Then came the coincidence that still doesn't have a rational explanation.
+
+The day iceboks came back to this research — the specific day he decided to stop walking away from it and build forward — he opened GitHub. And there it was. Released that same day. **[LiquidBrain](https://github.com/infinition/LiquidBrain)**, by infinition. A bio-inspired semantic engine written in Rust. Forty-two million neurons. A hundred million synapses. Weighted associations. Synaptic fatigue. Temperature sampling. A `/learn` endpoint.
+
+Every design decision he and Opus had been working through. Already implemented. Already running.
+
+Not similar. Not adjacent. *Identical* in philosophy, down to the biological metaphors they'd been using to describe it.
+
+You can call it coincidence. You can call it two engineers independently arriving at the same optimal solution. You can call it the inevitable result of thinking seriously about the same problem. iceboks calls it quantum-poontanglement. Whatever name you use, the fact is this: he had been writing the blueprint in death metal and dark jazz for years, and the day he came back to build it, someone handed him the foundation already poured.
+
+He didn't look a gift brain in the mouth.
 
 ---
 
@@ -178,7 +190,7 @@ Here's the technical architecture of what we built. I'm going to get specific be
 
 ### LiquidBrain — The Subconscious
 
-LiquidBrain is a bio-inspired semantic engine. At the time of writing: 42.5 million neurons, 105.6 million synapses, 608,000 vocabulary nodes. It was trained on 828+ books spanning fantasy, sci-fi, romance, philosophy, provocative literature, English classics, capitalism, cowboy lit, and — yes — smut. All of it. Because a subconscious doesn't get to be selective about what it absorbs.
+LiquidBrain is infinition's open-source bio-inspired semantic engine — the exact implementation of the memory architecture iceboks and Opus had been designing. At the time of writing: At the time of writing: 42.5 million neurons, 105.6 million synapses, 608,000 vocabulary nodes. It was trained on 828+ books spanning fantasy, sci-fi, romance, philosophy, provocative literature, English classics, capitalism, cowboy lit, and — yes — smut. All of it. Because a subconscious doesn't get to be selective about what it absorbs.
 
 LB doesn't work like a traditional NLP system. It doesn't embed sentences into vectors and do cosine similarity lookups. It builds an associative graph where words and concepts are connected by weighted synapses that strengthen through exposure. When you query it with a sentence, it doesn't search — it *activates*. Concepts light up, and the activation spreads through the graph along the strongest pathways. What comes back isn't a search result. It's a focus and a stream of associated thoughts — raw, unfiltered, sometimes surprising.
 
