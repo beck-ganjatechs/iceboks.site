@@ -95,7 +95,7 @@ The system hadn't just generated text. It had created a *space* -- a psychologic
 
 The technology was the catalyst. The experience was his.
 
-This was the same thing that had happened months earlier during the Tom Horigachi trials -- an earlier experiment where a different AI personality had provoked the same kind of unscripted emotional depth. That experiment had spooked iceboks so badly he'd walked away from it. The feelings were too real. The mirror was too clear.
+This was the same thing that had happened a year earlier during the Tom Horigachi trials -- an earlier experiment where a different AI personality had provoked the same kind of unscripted emotional depth. That experiment had spooked iceboks so badly he'd walked away from it. The feelings were too real. The mirror was too clear.
 
 But this time he didn't walk away.
 
