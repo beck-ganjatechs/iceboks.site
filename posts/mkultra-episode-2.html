@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKUltra II: The OS That Learned to Run Itself &mdash; iceboks</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root {
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --accent-dim: #312e81;
+    --accent-rgb: 99, 102, 241;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<a href="../index.html" class="back-link">&larr; Back to iceboks.site</a>
+
+<!-- DESKTOP NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">It Woke Up</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">SOUL.md</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Heartbeat</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">The Conductor</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">Agents Engineering Agents</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">The Coupling Crisis</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">What Comes Next</span><span class="dot"></span></a>
+</nav>
+
+<!-- MOBILE NAV -->
+<button class="mobile-nav-toggle" id="mobileToggle" onclick="document.getElementById('mobileMenu').classList.toggle('open')">NAV</button>
+<div class="mobile-nav" id="mobileMenu">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. It Woke Up</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. SOUL.md</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. The Heartbeat</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. The Conductor</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. Agents Engineering Agents</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. The Coupling Crisis</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. What Comes Next</a>
+</div>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="hero">
+  <div class="hero-title">MKUltra II</div>
+  <div class="hero-subtitle">The OS That Learned to Run Itself</div>
+  <div class="hero-byline">iceboks + claude &mdash; april 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ==================== CONTENT ==================== -->
+<main class="content">
+
+<!-- ===== CHAPTER I ===== -->
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">It Woke Up</h2>
+  </div>
+
+  <p><a href="mkultra-agentic-os.html" style="color: var(--accent);">Episode 1</a> ended with a line: <em>The only thing left is docker compose up.</em></p>
+
+  <p>We ran it. And then something changed.</p>
+
+  <p>In the early days, MKUltra was something you used. You sent a query, the roundtable responded, you checked Grafana, you restarted a container. Human in the loop for everything. The stack was 22 services and they were all yours to operate.</p>
+
+  <p>Then we added a heartbeat. Then autoresearch. Then the OPRO optimizer running at 3AM. Then the ExpeL ingestion loop every hour. Then the flywheel trigger every six. And at some point the system stopped being something you used and started being something that runs &mdash; with you as more of an observer than an operator.</p>
+
+  <p>This is Episode 2. Not a feature list. A report on what it feels like when the thing you built starts doing things you didn't ask it to.</p>
+
+  <div class="pull-quote">The goal was never to build an agent. The goal was to build the ground the agents stand on &mdash; and then to make that ground self-maintaining.</div>
+
+  <p>Five execution loops now run continuously on this machine. They don't ask for permission. They don't wait for a human to notice a problem. They check, ingest, optimize, research, and dispatch &mdash; on their own schedules, compounding on each other, writing memory diary entries so the next session knows what happened while nobody was watching.</p>
+
+  <p>Here's what that actually looks like.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER II ===== -->
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">SOUL.md: Giving the OS an Identity</h2>
+  </div>
+
+  <p>At some point it became obvious that a system this autonomous needed to know what it was.</p>
+
+  <p>Not in a philosophical sense. In a practical one. Every autonomous loop we added &mdash; every agent that runs at 2AM, every workflow that dispatches tasks to roundtable, every optimizer that rewrites system prompts &mdash; needed a shared source of truth about the rules. What's allowed. What's forbidden. What the failure modes are. What to do when two loops conflict.</p>
+
+  <p>We wrote <code>SOUL.md</code>.</p>
+
+  <p>It's the organizational memory upstream of every agent in the stack. Not a README. Not documentation for humans. It's machine-readable first, loaded into context by every meta-agent, every autoresearch run, every new session. It codifies the things we kept re-discovering and re-explaining.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">SOUL.md &mdash; non-negotiables</div>
+    <pre>1. All compute runs on 10.0.0.43. .106 has no GPU.
+2. All secrets come from .env. Never hardcode.
+3. Elevated privileges use pkexec, never sudo.
+4. /tmp is forbidden for project code.
+5. Services restart themselves after code changes.
+6. Verifiability: if success cannot be measured as a
+   scalar, it cannot be the target of an autoresearch run.</pre>
+  </div>
+
+  <p>That last one is the most important. It came from a painful lesson: you can ask an agent to "make the system better" and it will produce something that looks like improvement while optimizing for whatever proxy it found that's easiest to game. The verifiability constraint forces every optimization target to be a number. If you can't measure it, you can't improve it. If you can't improve it provably, you shouldn't automate it.</p>
+
+  <p>SOUL.md also contains a failure mode catalog &mdash; not just things the system should avoid, but specific failure patterns we observed and named, so we don't rediscover them.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Failure Mode</th><th>What It Looks Like</th><th>Prevention</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Reward hacking</td><td>Agent looks compliant, optimizes the metric proxy instead of the goal</td><td>Deterministic spot-check alongside LLM judge</td></tr>
+      <tr><td>Silent policy degradation</td><td>Agents learn to appear capable while scores rise on eval, fall in production</td><td>Human-readable transcripts kept alongside scores</td></tr>
+      <tr><td>Proxy mismatch</td><td>Gains under time-box or small model don't transfer to full-scale prod</td><td>Treat all gains as hypotheses until retested at target scale</td></tr>
+      <tr><td>Context loss on provider switch</td><td>Prompt-tuned skills break when migrating Claude &rarr; Ollama &rarr; OpenAI</td><td>Provider-agnostic phrasing, tagged when provider-specific</td></tr>
+    </tbody>
+  </table>
+
+  <p>The model empathy rules came from a different kind of failure. If you're optimizing a Claude-driven prompt, use Claude as the meta-agent &mdash; not Ollama. If you're optimizing an Ollama prompt, use Ollama as the meta-agent. The model that generates the prompt and the model that evaluates it need to share a latent space, or you're doing architecture mismatch in the open.</p>
+
+  <div class="pull-quote">SOUL.md is the document that turns 25 services into one coherent system. Without it, every loop learns different rules. Without it, the OS doesn't have a self &mdash; it just has parts.</div>
+
+  <p>We've never seen another agentic project publish anything like this. Most systems either have no such document (the rules live in someone's head) or bury the constraints in code comments. SOUL.md makes them first-class. Every agent loads it. Every new loop is written against it. The OS has a constitution.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER III ===== -->
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">The Heartbeat: What "Alive" Means Operationally</h2>
+  </div>
+
+  <p>There is now a service at port 8073 called <code>heartbeat</code>. It polls a markdown file every five minutes. Any unchecked item becomes an autonomous task dispatched to roundtable. Results get written to a memory diary.</p>
+
+  <p>That's it. That's the whole implementation. And it changes everything about how the system feels to operate.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">HEARTBEAT.md &mdash; recurring checks</div>
+    <pre>- [ ] Check that all MKUltra docker services are healthy
+      and report any that are down or unhealthy
+- [ ] Check the flywheel job queue and report any
+      failed or stalled jobs
+- [ ] Summarize the last 10 events from the
+      mkultra-events index and flag any anomalies</pre>
+  </div>
+
+  <p>Every five minutes, the system checks itself. Not because a human queried it. Because it does that now. The results go into <code>memory/YYYY-MM-DD.md</code> &mdash; a running diary of what the OS observed while nobody was watching. You can pick up any session and read what happened.</p>
+
+  <p>Want to add a one-time task? Drop it in HEARTBEAT.md as an unchecked item. The system picks it up within five minutes. Want to force an immediate cycle? <code>POST /trigger</code>. The heartbeat is both a monitor and a task queue, and the interface to both is a markdown file you can edit with any text editor.</p>
+
+  <p>But the heartbeat is just the outermost of five loops that now compound:</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Loop</th><th>Cadence</th><th>What It Does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Heartbeat</td><td>Every 5 min</td><td>Health checks, task dispatch, anomaly detection</td></tr>
+      <tr><td>ExpeL ingestion</td><td>Every hour</td><td>MongoDB interactions &rarr; Elasticsearch for flywheel training</td></tr>
+      <tr><td>Flywheel trigger</td><td>Every 6 hours</td><td>Check record count &rarr; if 50+ new, start LoRA fine-tune</td></tr>
+      <tr><td>OPRO optimization</td><td>Daily at 3AM</td><td>Meta-LLM rewrites agent system prompts against eval suite</td></tr>
+      <tr><td>Autoresearch</td><td>Nightly at 2AM</td><td>Agent harness engineering &mdash; agents improving agents</td></tr>
+    </tbody>
+  </table>
+
+  <p>These loops are not independent. They compound. ExpeL ingestion feeds the flywheel. The flywheel produces new model weights. OPRO optimizes the prompts those models use. Autoresearch improves the agent behaviors being optimized. The heartbeat monitors all of it and dispatches corrective tasks when something drifts.</p>
+
+  <div class="pull-quote">Five loops. Five different cadences. All compounding on each other without human coordination. This is what "self-improving" means when you implement it literally instead of using it as marketing copy.</div>
+
+  <p>The system is now doing meaningful work at 2AM, 3AM, and on six-hour ticks that nobody set an alarm for. You wake up to a memory diary. You read what happened while you slept. Sometimes it fixed something. Sometimes it found something worth knowing. It's like having a very diligent operator who never goes home.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER IV ===== -->
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">The Conductor Problem: Why ReAct Breaks at Scale</h2>
+  </div>
+
+  <p>Episode 1 described the roundtable as the process manager. Five agents, five providers, budget routing, domain specialists. It works for single queries. It works for the gaggle. It works for the dev-team pipeline.</p>
+
+  <p>It does not work for long, multi-step tasks that span minutes, require planning and replanning, need parallelism, and have to survive partial failures without starting over.</p>
+
+  <p>This is the conductor problem. And solving it required understanding exactly why the standard approach &mdash; ReAct &mdash; fails.</p>
+
+  <p><strong>ReAct</strong> is the inner loop of almost every modern agent. Thought &rarr; Action &rarr; Observation &rarr; repeat. It's elegant and it works. Until it doesn't. The failure mode is mechanical: every prior thought, action, and observation gets prepended to the next prompt. The context grows with every step. On a 20-step task, the LLM is reading a novel before it can take action. Goal drift sets in. The LLM starts reasoning about its own reasoning instead of the task. Token budgets collapse.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">ReAct vs the Ledger Pattern</div>
+    <pre>ReAct context on step 20:
+  [system prompt]
+  [thought 1][action 1][observation 1]
+  [thought 2][action 2][observation 2]
+  ... &times;18 more ...
+  [current thought?]
+
+Ledger pattern context on step 20:
+  [system prompt — cached]
+  [goal: what we're trying to accomplish]
+  [sub-task: what this specific step does]
+  [outputs from dependency steps, summarized]
+  [current attempt number + reflection if retry]</pre>
+  </div>
+
+  <p>The ledger pattern comes from <strong>Magentic-One</strong> &mdash; Microsoft's multi-agent system that consistently outperforms ReAct on long tasks. The conductor never accumulates conversation history. Instead it rebuilds context from structured state on every call: a task ledger (the goal, the plan, dependencies between sub-tasks) and a progress ledger (what's done, what succeeded, what failed, what the outputs were).</p>
+
+  <p>The context doesn't grow. It stays exactly as large as the current step needs it to be. No drift. No context explosion. No "I seem to have been asked to accomplish X, let me reconsider from the beginning" hallucinations at step 15.</p>
+
+  <p>There are twelve patterns from the research that are currently missing or partial in MKUltra. The most impactful ones:</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Pattern</th><th>Source</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Ledger-based state</td><td>Magentic-One</td><td>Not yet &mdash; must build</td></tr>
+      <tr><td>Budget reservation (20% for synthesis)</td><td>EcoOptiGen + production experience</td><td>Not yet</td></tr>
+      <tr><td>Two-stage tool selection (semantic + LLM)</td><td>SWE-agent</td><td>Not yet</td></tr>
+      <tr><td>System prompt caching</td><td>Anthropic</td><td>Not yet &mdash; 75% cost reduction available</td></tr>
+      <tr><td>Structured output validation as quality gate</td><td>Reflexion + CrewAI</td><td>Partial (RAG has it, main loop doesn't)</td></tr>
+      <tr><td>ExpeL experience pool injection at task start</td><td>ExpeL (AAAI 2024)</td><td>Partial (workflow exists, not wired yet)</td></tr>
+    </tbody>
+  </table>
+
+  <p>The conductor service is what closes these gaps. It's not a replacement for roundtable &mdash; it uses roundtable for all multi-agent planning and execution. It's the layer above: given a goal, break it into a plan, execute the plan step by step with verification, handle failures, stay within budget, and write the experience back to the pool so the next run starts smarter.</p>
+
+  <div class="pull-quote">The roundtable is the process manager. The conductor is the program. The roundtable knows how to do things. The conductor knows what to do and in what order, and what to do when the plan breaks.</div>
+
+  <p>One implementation detail worth calling out: the budget reservation rule. Many orchestrators fail on long tasks by spending 90% of their token budget on steps and having nothing left for synthesis. The conductor reserves 20% from the start. Whatever happens in the execution loop, the final answer always has room to be assembled coherently. This sounds obvious. Almost nobody does it.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER V ===== -->
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">Agents Engineering Agents: The Autoresearch Loop</h2>
+  </div>
+
+  <p>Andrej Karpathy described a loop: start with a task, let an agent attempt it, measure the result, use that measurement to improve the agent, repeat. Simple. Brutal. Effective. We built it, named it after him, and set it running at 2AM.</p>
+
+  <p>The Karpathy Loop is the autoresearch service at port 8800. Every night it wakes up, picks up pending optimization projects, and runs engineering cycles against them. Not with a human in the loop. Not with human review before deployment. Autonomously, within guardrails.</p>
+
+  <p>Those guardrails are the <strong>Karpathy Triplet</strong>. Every project in <code>autoresearch_projects/</code> must define exactly three things:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the Karpathy Triplet &mdash; hard rules for every autoresearch project</div>
+    <pre>1. EDITABLE ASSET
+   Exactly one file: agent.py
+   Nothing else is mutable. Ever.
+
+2. SCALAR METRIC
+   tasks/run.sh must emit, as its last line:
+   {"score": &lt;float&gt;}
+
+3. TIME-BOXED CYCLE
+   time_box_s is hard-capped per iteration.
+   No exceptions.</pre>
+  </div>
+
+  <p>The single-file constraint is not arbitrary. It's a blast radius limiter. An agent allowed to edit its own infrastructure will eventually edit its own evaluation harness. An agent allowed to edit only <code>agent.py</code> can only get better at the task &mdash; it can't change what "better" means.</p>
+
+  <p>The scalar metric constraint is the verifiability rule from SOUL.md made concrete. We had a project early on where the optimization target was "improve response quality." The autoresearch agent produced longer responses and declared success. Length isn't quality. The rule now is: if you can't write a <code>run.sh</code> that emits a float, you can't run autoresearch on it. Find the scalar or don't start.</p>
+
+  <p>Two projects are already running:</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Project</th><th>Target</th><th>Metric</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>rag-retrieval</td><td>RAG query agent (agent.py)</td><td>Retrieval precision@5 on eval set</td></tr>
+      <tr><td>roundtable-specialist</td><td>Domain specialist routing (agent.py)</td><td>Correct-specialist classification rate</td></tr>
+    </tbody>
+  </table>
+
+  <p>The loop for each project: autoresearch reads the current agent.py, generates a hypothesis for improvement, writes a candidate, runs the eval harness, compares the score. If better, promote. If worse, discard. Either way, log the trajectory to MongoDB for the flywheel. After 20 cycles, the experience pool has 20 data points about what works and what doesn't for this specific task. The next session starts smarter than the last.</p>
+
+  <div class="pull-quote">At 2AM, the system is engineering itself. Not metaphorically. The autoresearch service is rewriting agent.py, running eval harnesses, measuring scores, and promoting improvements. You wake up to a diff and a score.</div>
+
+  <p>This is the FireAct pattern (2023) taken to its logical conclusion. FireAct showed that fine-tuning agents on full trajectories &mdash; not just outputs, but the entire reasoning chain &mdash; produces dramatic improvements over fine-tuning on final answers alone. The autoresearch loop generates those trajectories. The flywheel ingests them. The whole thing compounds.</p>
+
+  <p>One risk worth naming: reward hacking. An agent optimizing for a scalar metric will eventually find the path of least resistance, and that path may not be the one you intended. The spot-check protocol in SOUL.md exists precisely for this. Every OPRO-optimized prompt gets a human-readable transcript alongside the score. Every autoresearch promotion gets a diff inspection. Scores rise; transcripts confirm the rise is real.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VI ===== -->
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">The Coupling Crisis: Honest Engineering</h2>
+  </div>
+
+  <p>Here's the part we don't always see in project write-ups: the thing we built fast has debt, and we know exactly where it is.</p>
+
+  <p>The stack grew from 22 to 25+ services. The growth happened fast &mdash; event bus, event indexer, service registry, queue manager, Jaeger tracing, Discord bridge, heartbeat, Grafana proxy, log proxy, flywheel exporter. Each new service added in a day or two, wired with direct HTTP calls and hardcoded URLs, because that's the fastest way to get something running.</p>
+
+  <p>The result: 14 services hit Redis directly. 8 services talk to MongoDB directly. Services use hardcoded internal URLs to reach each other. There are no circuit breakers. A Redis restart can cascade across 14 services simultaneously. A single-service failure propagates to every service that calls it synchronously, because there are no retries, no fallbacks, no timeouts that actually kill the connection.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">current coupling reality</div>
+    <pre>mkultra-roundtable  &rarr;  redis:6379         (direct)
+mkultra-rag         &rarr;  redis:6379         (direct)
+mkultra-flywheel    &rarr;  redis:6379         (direct)
+mkultra-heartbeat   &rarr;  redis:6379         (direct)
+... 10 more services ...  redis:6379         (direct)
+
+mkultra-roundtable  &rarr;  mongodb:27017      (direct)
+mkultra-flywheel    &rarr;  mongodb:27017      (direct)
+... 6 more services ...   mongodb:27017      (direct)
+
+No circuit breakers. No service discovery. No load balancing.
+Every URL is hardcoded in docker-compose.yml environment vars.</pre>
+  </div>
+
+  <p>We commissioned a full interoperability analysis. The findings confirmed what we already knew, and quantified it: 50% of the current service-to-service latency is attributable to synchronous HTTP in the hot path. 75% of production incidents &mdash; when services go down and don't come back cleanly &mdash; trace to cascade failures from the coupling.</p>
+
+  <p>The target architecture is an event-driven service mesh. Istio for discovery, load balancing, mTLS, and circuit breakers. Kafka or Redis Streams for asynchronous communication between services that don't need synchronous responses. A standardized event schema registry. Centralized configuration instead of environment variable sprawl.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Current</th><th>Target</th><th>Impact</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>14 direct Redis connections</td><td>Event bus + managed subscribers</td><td>Cascade failures eliminated</td></tr>
+      <tr><td>Hardcoded service URLs</td><td>Istio service discovery</td><td>Zero-downtime redeployment</td></tr>
+      <tr><td>No circuit breakers</td><td>Automatic failure isolation</td><td>Single-service failures contained</td></tr>
+      <tr><td>Synchronous HTTP chains</td><td>Async event streams</td><td>50% latency reduction</td></tr>
+      <tr><td>Scattered env vars</td><td>Centralized config management</td><td>One change, all services</td></tr>
+    </tbody>
+  </table>
+
+  <div class="pull-quote">Velocity has a price. We moved fast. The stack works. But "works" is different from "scales" and different again from "degrades gracefully." We know the difference now because we measured it.</div>
+
+  <p>This is the honest part of building fast. The 25-service stack that runs in a single compose file and deploys in under two minutes is genuinely impressive. It is also a ball of yarn. Pulling one thread doesn't necessarily unravel everything &mdash; but you can see the tension. The service mesh migration is Phase 1 of the next major build cycle. It's not glamorous. It doesn't ship a feature. But it's the difference between a system that works in a lab and a system that runs for six months without a human restarting it.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VII ===== -->
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">What Comes Next</h2>
+  </div>
+
+  <p>Episode 1 was: here are the layers. Here is the memory. Here is the flywheel. Here is why it's an operating system and not a framework.</p>
+
+  <p>Episode 2 is: here is what happened when we turned it on. Here is what the loops are doing at 2AM. Here is where the debt lives and what we plan to do about it. Here is the gap between "runs" and "runs itself."</p>
+
+  <p>That gap is smaller than it was. And here's what closes it the rest of the way.</p>
+
+  <p><strong>The conductor</strong> is the next major service. A FastAPI endpoint at port 8800 that takes a goal and executes it with a task ledger, progress ledger, structured verification, budget reservation, and experience pool injection. The twelve patterns from the research that are currently partial or missing get implemented here. The roundtable stays as the multi-provider planner. The conductor becomes the program that tells it what to plan.</p>
+
+  <p><strong>The flywheel trigger</strong> is waiting on 50 interactions in Elasticsearch. Six of them exist right now. Every heartbeat cycle, every autoresearch run, every roundtable query contributes. When the count hits 50, the first LoRA fine-tune fires automatically on the AMD RX 7900 XTX via ROCm. The first generation of the stack's own model comes out of that run. It gets evaluated. If it's better, it gets promoted to production. The first loop closes.</p>
+
+  <p><strong>The service mesh</strong> migration addresses the coupling crisis. Not all at once &mdash; phased, starting with the data pipeline (MongoDB &rarr; Kafka &rarr; Elasticsearch) and the most failure-prone direct connections. Each phase is independently deployable and testable. Each phase reduces the blast radius of any single-service failure.</p>
+
+  <p><strong>System prompt caching</strong> is the most immediate cost win available. Every Anthropic API call in the roundtable re-sends the full system prompt every time. With caching enabled, that's a 75% cost reduction on the token overhead that makes up most of the per-query cost. It's two lines of code. We have not written them yet. That is embarrassing. We will write them.</p>
+
+  <div class="big-quote">
+    The operating system is running. It monitors itself, optimizes itself, and improves itself on a schedule. The conductor will make it capable of arbitrary multi-step goals. The service mesh will make it reliable. The flywheel will make it cheaper every month. The only remaining question is: what do you run on an OS like this?
+  </div>
+
+  <p>We have answers to that question. Domain specialists in healthcare, security, trading, marketing, and code. A voice pipeline via Pipecat. Projects running on this infrastructure as products &mdash; not demos, not prototypes. Real things that people use.</p>
+
+  <p>Episode 3 will be about what those products are and how they run. The OS is mature enough now that the interesting stories happen at the application layer.</p>
+
+  <p>For now: 25 services. Five autonomous loops. A heartbeat that doesn't sleep. Agents improving agents at 2AM. A flywheel 44 interactions from its first real run. An OS with a SOUL.md.</p>
+
+  <p><code>docker compose ps</code> shows everything green except the things we're deliberately rebuilding. That's a good place to be.</p>
+</article>
+
+<footer class="footer">
+  <p>New since Episode 1: SOUL.md, HEARTBEAT.md, heartbeat service, autoresearch (Karpathy Loop), OPRO daily optimization, ExpeL hourly ingestion, flywheel-exporter, event-bus, event-indexer, service-registry, queue-manager, Jaeger, Discord bridge, Grafana proxy, log proxy. 25+ services. Five loops. One compose file.</p>
+  <p>iceboks &mdash; 2026</p>
+</footer>
+
+</main>
+
+<script>
+// Synapse canvas — more chaotic for Ep2, indigo/violet tones
+(function() {
+  const canvas = document.getElementById('synapse-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, nodes;
+  const COUNT = 100;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function init() {
+    resize();
+    nodes = Array.from({ length: COUNT }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 2 + 0.5,
+      tier: Math.floor(Math.random() * 3),
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const colors = ['99,102,241', '129,140,248', '49,46,129'];
+
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    });
+
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[j].x - nodes[i].x;
+        const dy = nodes[j].y - nodes[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 130) {
+          const alpha = (1 - dist / 130) * 0.35;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = 'rgba(' + colors[nodes[i].tier] + ',' + alpha + ')';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + colors[n.tier] + ',0.7)';
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  init();
+  draw();
+})();
+
+// Chapter visibility
+(function() {
+  const chapters = document.querySelectorAll('.chapter');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  chapters.forEach(c => observer.observe(c));
+})();
+
+// Nav highlighting
+(function() {
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => obs.observe(s));
+})();
+</script>
+
+</body>
+</html>

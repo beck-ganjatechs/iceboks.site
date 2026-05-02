@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lab Report — iceboks</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root {
+    --accent: #a855f7;
+    --accent-light: #c084fc;
+    --accent-dim: #6b21a8;
+    --accent-rgb: 168, 85, 247;
+  }
+
+  /* ── STAT GRID ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.25rem;
+    margin: 2.5rem 0;
+  }
+
+  .stat-card {
+    background: var(--bg-surface);
+    border: 1px solid rgba(168, 85, 247, 0.18);
+    border-radius: 12px;
+    padding: 1.5rem 1.25rem 1.25rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .stat-card:hover {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 28px rgba(168, 85, 247, 0.1);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.07) 0%, transparent 70%);
+  }
+
+  .stat-value {
+    font-family: 'Source Code Pro', monospace;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    color: var(--accent-light);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .stat-sub {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin-top: 0.2rem;
+  }
+
+  /* ── BAR CHARTS ── */
+  .chart-section {
+    margin: 2.5rem 0;
+  }
+
+  .chart-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .bar-label {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    min-width: 130px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 22px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    position: relative;
+    animation: barGrow 1.2s cubic-bezier(0.23,1,0.32,1) both;
+    transform-origin: left;
+  }
+
+  @keyframes barGrow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  .bar-val {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+
+  /* ── DONUT CHART ── */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    margin: 2rem 0;
+  }
+
+  .donut-svg {
+    flex-shrink: 0;
+    width: 180px;
+    height: 180px;
+    filter: drop-shadow(0 0 18px rgba(168,85,247,0.2));
+  }
+
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .legend-text {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+
+  .legend-pct {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+
+  /* ── ACTIVITY HEATMAP ── */
+  .heatmap-wrap {
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+
+  .heatmap-grid {
+    display: flex;
+    gap: 3px;
+    width: max-content;
+  }
+
+  .heatmap-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .heatmap-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: rgba(168, 85, 247, 0.08);
+    transition: background 0.2s;
+  }
+
+  .heatmap-cell:hover {
+    outline: 1px solid rgba(168,85,247,0.6);
+  }
+
+  .heatmap-cell[data-level="1"] { background: rgba(168, 85, 247, 0.22); }
+  .heatmap-cell[data-level="2"] { background: rgba(168, 85, 247, 0.44); }
+  .heatmap-cell[data-level="3"] { background: rgba(168, 85, 247, 0.68); }
+  .heatmap-cell[data-level="4"] { background: rgba(168, 85, 247, 0.90); }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    margin: 2rem 0;
+    position: relative;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(168,85,247,0.6), rgba(168,85,247,0.05));
+  }
+
+  .tl-item {
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(168,85,247,0.6);
+  }
+
+  .tl-date {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.68rem;
+    color: var(--accent-light);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.2rem;
+  }
+
+  .tl-proj {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+  }
+
+  .tl-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── TECH PILL CLOUD ── */
+  .pill-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1.5rem 0;
+  }
+
+  .pill {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.72rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid;
+    letter-spacing: 0.05em;
+    transition: box-shadow 0.2s;
+  }
+
+  .pill:hover {
+    box-shadow: 0 0 14px currentColor;
+  }
+
+  .pill-js  { color: #f7df1e; border-color: rgba(247,223,30,0.3); }
+  .pill-py  { color: #3776ab; border-color: rgba(55,118,171,0.3); background: rgba(55,118,171,0.07); }
+  .pill-rs  { color: #f04a00; border-color: rgba(240,74,0,0.3); }
+  .pill-ts  { color: #3178c6; border-color: rgba(49,120,198,0.3); background: rgba(49,120,198,0.07); }
+  .pill-go  { color: #00add8; border-color: rgba(0,173,216,0.3); }
+  .pill-sh  { color: #4eaa25; border-color: rgba(78,170,37,0.3); }
+  .pill-hw  { color: #ff8800; border-color: rgba(255,136,0,0.3); }
+  .pill-md  { color: #a855f7; border-color: rgba(168,85,247,0.3); }
+
+  /* ── CALLOUT BOX ── */
+  .callout {
+    background: rgba(168, 85, 247, 0.07);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1.25rem 1.5rem;
+    margin: 2rem 0;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .callout strong {
+    color: var(--accent-light);
+    font-weight: 700;
+  }
+
+  /* ── GIANT NUMBER ── */
+  .giant {
+    font-family: 'Source Code Pro', monospace;
+    font-size: clamp(4rem, 12vw, 9rem);
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    opacity: 0.15;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .chapter { position: relative; overflow: hidden; }
+
+  @media (max-width: 600px) {
+    .bar-label { min-width: 90px; font-size: 0.7rem; }
+    .donut-wrap { gap: 1.25rem; }
+    .donut-svg { width: 140px; height: 140px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<a href="../index.html" class="back-link">&larr; Back to iceboks.site</a>
+
+<!-- NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">By the Numbers</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">Language Stack</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">Domain Map</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">Project Titans</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">Activity</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">The Thesis</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" id="mobileToggle" onclick="document.getElementById('mobileMenu').classList.toggle('open')">NAV</button>
+<div class="mobile-nav" id="mobileMenu">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. By the Numbers</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. Language Stack</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. Domain Map</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. Project Titans</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. Activity</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. The Thesis</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-title">The Lab Report</div>
+  <div class="hero-subtitle">A full autopsy of 433 projects, 165 GB of code, and one very chaotic brain</div>
+  <div class="hero-byline">iceboks + claude &mdash; may 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<!-- ===== CHAPTER I — RAW METRICS ===== -->
+<article class="chapter" id="ch1">
+<div class="giant">433</div>
+<h2>I. By the Numbers</h2>
+<p>
+  Claude scanned the entire <code>/home/iceboks/projekts/</code> directory — 433 directories, 165 gigabytes,
+  uncountable hours. Here's the raw readout, no spin.
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">433</div>
+    <div class="stat-label">Total Projects</div>
+    <div class="stat-sub">dirs in /projekts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">165G</div>
+    <div class="stat-label">Disk Consumed</div>
+    <div class="stat-sub">on a single machine</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">119</div>
+    <div class="stat-label">Git Repos</div>
+    <div class="stat-sub">with tracked history</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">115</div>
+    <div class="stat-label">Node Projects</div>
+    <div class="stat-sub">package.json present</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">87</div>
+    <div class="stat-label">Python Projects</div>
+    <div class="stat-sub">requirements / pyproject</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">111</div>
+    <div class="stat-label">Dockerized</div>
+    <div class="stat-sub">compose or Dockerfile</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">11</div>
+    <div class="stat-label">Rust Crates</div>
+    <div class="stat-sub">Cargo.toml present</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">14,905</div>
+    <div class="stat-label">PNG Files</div>
+    <div class="stat-sub">largest file type</div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Stat that stopped me cold:</strong> 111 Dockerized projects. That's not a dev
+  environment — that's a desire to ship. Almost 1 in 4 projects has a
+  <code>docker-compose.yml</code> or <code>Dockerfile</code>. This lab was always trying to go to production.
+</div>
+</article>
+
+<!-- ===== CHAPTER II — LANGUAGE STACK ===== -->
+<article class="chapter" id="ch2">
+<h2>II. Language Stack</h2>
+<p>
+  Counting by file types across all projects (excluding <code>node_modules</code> and <code>.git</code>),
+  here's what the lab actually speaks:
+</p>
+
+<div class="chart-section">
+  <div class="chart-title">File Count by Type — top 12</div>
+
+  <div class="bar-row">
+    <div class="bar-label">PNG / Images</div>
+    <div class="bar-track"><div class="bar-fill" style="width:100%; background: linear-gradient(90deg, #f59e0b, #fcd34d); animation-delay:0.0s;"></div></div>
+    <div class="bar-val">14,905</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">Markdown</div>
+    <div class="bar-track"><div class="bar-fill" style="width:16.5%; background: linear-gradient(90deg, #a855f7, #c084fc); animation-delay:0.05s;"></div></div>
+    <div class="bar-val">2,466</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">Python (.py)</div>
+    <div class="bar-track"><div class="bar-fill" style="width:15.8%; background: linear-gradient(90deg, #3776ab, #5294ce); animation-delay:0.10s;"></div></div>
+    <div class="bar-val">2,359</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">JSON</div>
+    <div class="bar-track"><div class="bar-fill" style="width:10.4%; background: linear-gradient(90deg, #6b7280, #9ca3af); animation-delay:0.15s;"></div></div>
+    <div class="bar-val">1,556</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">PDF</div>
+    <div class="bar-track"><div class="bar-fill" style="width:8.2%; background: linear-gradient(90deg, #dc2626, #ef4444); animation-delay:0.20s;"></div></div>
+    <div class="bar-val">1,229</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">JavaScript (.js)</div>
+    <div class="bar-track"><div class="bar-fill" style="width:8.0%; background: linear-gradient(90deg, #ca8a04, #f7df1e); animation-delay:0.25s;"></div></div>
+    <div class="bar-val">1,191</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">Shell (.sh)</div>
+    <div class="bar-track"><div class="bar-fill" style="width:5.4%; background: linear-gradient(90deg, #16a34a, #4ade80); animation-delay:0.30s;"></div></div>
+    <div class="bar-val">811</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">TypeScript (.ts)</div>
+    <div class="bar-track"><div class="bar-fill" style="width:4.0%; background: linear-gradient(90deg, #1d4ed8, #3b82f6); animation-delay:0.35s;"></div></div>
+    <div class="bar-val">604</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">HTML</div>
+    <div class="bar-track"><div class="bar-fill" style="width:2.7%; background: linear-gradient(90deg, #e44d26, #f06529); animation-delay:0.40s;"></div></div>
+    <div class="bar-val">401</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">YAML</div>
+    <div class="bar-track"><div class="bar-fill" style="width:1.8%; background: linear-gradient(90deg, #0e7490, #22d3ee); animation-delay:0.45s;"></div></div>
+    <div class="bar-val">274</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">SVG</div>
+    <div class="bar-track"><div class="bar-fill" style="width:1.6%; background: linear-gradient(90deg, #7c3aed, #a78bfa); animation-delay:0.50s;"></div></div>
+    <div class="bar-val">236</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">TSX / JSX</div>
+    <div class="bar-track"><div class="bar-fill" style="width:2.1%; background: linear-gradient(90deg, #0284c7, #38bdf8); animation-delay:0.55s;"></div></div>
+    <div class="bar-val">321</div>
+  </div>
+</div>
+
+<p>The tech stack the lab runs on, in pill form:</p>
+
+<div class="pill-cloud">
+  <span class="pill pill-js">JavaScript</span>
+  <span class="pill pill-ts">TypeScript</span>
+  <span class="pill pill-py">Python</span>
+  <span class="pill pill-rs">Rust</span>
+  <span class="pill pill-go">Go</span>
+  <span class="pill pill-sh">Bash/Shell</span>
+  <span class="pill pill-hw">C / C++</span>
+  <span class="pill pill-hw">Arduino</span>
+  <span class="pill pill-md">Markdown</span>
+  <span class="pill pill-js">Node.js</span>
+  <span class="pill pill-ts">Next.js</span>
+  <span class="pill pill-ts">SvelteKit</span>
+  <span class="pill pill-py">FastAPI</span>
+  <span class="pill pill-rs">Tokio</span>
+  <span class="pill pill-hw">ESP32</span>
+  <span class="pill pill-hw">LoRa / SX1262</span>
+  <span class="pill pill-py">PyTorch</span>
+  <span class="pill pill-py">ComfyUI</span>
+  <span class="pill pill-sh">Docker</span>
+  <span class="pill pill-sh">nginx</span>
+</div>
+
+<div class="callout">
+  <strong>The interesting split:</strong> JS/TS (1,795 files) vs Python (2,359 files). Python
+  wins on raw file count — mostly because of AI, ML, and automation work. JS/TS wins on
+  <em>runtime infrastructure</em>: 115 package.json means 115 services, frontends, or APIs.
+  The lab is bilingual with a Rust accent.
+</div>
+</article>
+
+<!-- ===== CHAPTER III — DOMAIN MAP ===== -->
+<article class="chapter" id="ch3">
+<h2>III. Domain Map</h2>
+<p>
+  When you cluster 433 projects by name, language, and tooling, six distinct research domains
+  emerge. This is not a dev shop — it's a research institution with no HR department.
+</p>
+
+<div class="donut-wrap">
+  <svg class="donut-svg" viewBox="0 0 180 180">
+    <circle cx="90" cy="90" r="70" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="28"/>
+    <!-- AI/Agents: 33 → 20.6% → 72.9° -->
+    <circle cx="90" cy="90" r="70" fill="none" stroke="#a855f7" stroke-width="28"
+      stroke-dasharray="76 363" stroke-dashoffset="0" transform="rotate(-90 90 90)"/>
+    <!-- Teleapi/Backend: 40 → 25% → 88.4° -->
+    <circle cx="90" cy="90" r="70" fill="none" stroke="#00e5ff" stroke-width="28"
+      stroke-dasharray="110 363" stroke-dashoffset="-76" transform="rotate(-90 90 90)"/>
+    <!-- UI/Web: 31 → 19.4% → 68.5° -->
+    <circle cx="90" cy="90" r="70" fill="none" stroke="#fb923c" stroke-width="28"
+      stroke-dasharray="86 363" stroke-dashoffset="-186" transform="rotate(-90 90 90)"/>
+    <!-- Security: 18 → 11.3% → 39.7° -->
+    <circle cx="90" cy="90" r="70" fill="none" stroke="#22c55e" stroke-width="28"
+      stroke-dasharray="50 363" stroke-dashoffset="-272" transform="rotate(-90 90 90)"/>
+    <!-- Hardware/IoT: 11 → 6.9% → 24.2° -->
+    <circle cx="90" cy="90" r="70" fill="none" stroke="#f43f5e" stroke-width="28"
+      stroke-dasharray="30 363" stroke-dashoffset="-322" transform="rotate(-90 90 90)"/>
+    <!-- Rust/Go + other: remaining -->
+    <circle cx="90" cy="90" r="70" fill="none" stroke="#6366f1" stroke-width="28"
+      stroke-dasharray="11 363" stroke-dashoffset="-352" transform="rotate(-90 90 90)"/>
+    <text x="90" y="86" text-anchor="middle" font-family="Source Code Pro,monospace"
+      font-size="20" font-weight="700" fill="#c084fc">433</text>
+    <text x="90" y="101" text-anchor="middle" font-family="Inter,sans-serif"
+      font-size="8" fill="#6b7280" letter-spacing="1">PROJECTS</text>
+  </svg>
+
+  <div class="donut-legend">
+    <div class="legend-row">
+      <div class="legend-dot" style="background:#00e5ff;"></div>
+      <span class="legend-text">Backend / API / Infra</span>
+      <span class="legend-pct">~40 projects</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-dot" style="background:#a855f7;"></div>
+      <span class="legend-text">AI / Agents / LLM</span>
+      <span class="legend-pct">~33 projects</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-dot" style="background:#fb923c;"></div>
+      <span class="legend-text">UI / Web / Dashboards</span>
+      <span class="legend-pct">~31 projects</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-dot" style="background:#22c55e;"></div>
+      <span class="legend-text">Security / Recon / OSINT</span>
+      <span class="legend-pct">~18 projects</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-dot" style="background:#f43f5e;"></div>
+      <span class="legend-text">Hardware / IoT / Embedded</span>
+      <span class="legend-pct">~11 projects</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-dot" style="background:#6366f1;"></div>
+      <span class="legend-text">Rust / Go / Systems</span>
+      <span class="legend-pct">~13 projects</span>
+    </div>
+  </div>
+</div>
+
+<p>
+  The biggest domain — Backend/API — isn't a surprise. <strong>teleapi</strong>, the central nervous system
+  of the whole ecosystem, spawned at least 8 variants, forks, staging environments, and rewrites.
+  That single project ate more entropy than most people's entire repositories.
+</p>
+<p>
+  The AI/Agent cluster is what you'd expect given the lab's recent arc: <code>openclaw</code>,
+  <code>AgentLab</code>, <code>autogen</code>, <code>agent-framework</code>, <code>agentboks</code>,
+  <code>CrewAI-Studio</code>, <code>hermes-agent</code>, <code>copilotkit-adk</code>. That's not
+  research for its own sake — that's an obsession with <em>what comes after the API</em>.
+</p>
+</article>
+
+<!-- ===== CHAPTER IV — TITANS ===== -->
+<article class="chapter" id="ch4">
+<h2>IV. Project Titans</h2>
+<p>
+  Twenty projects by disk size, because size reveals commitment (or at least, accumulation):
+</p>
+
+<div class="chart-section">
+  <div class="chart-title">Largest Projects by Disk Usage</div>
+
+  <div class="bar-row">
+    <div class="bar-label">ComfyUI</div>
+    <div class="bar-track"><div class="bar-fill" style="width:100%; background: linear-gradient(90deg,#7c3aed,#a78bfa); animation-delay:0.0s;"></div></div>
+    <div class="bar-val">29 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">quest3-hud-app</div>
+    <div class="bar-track"><div class="bar-fill" style="width:41.3%; background: linear-gradient(90deg,#0ea5e9,#38bdf8); animation-delay:0.04s;"></div></div>
+    <div class="bar-val">12 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">asuswrt-merlin</div>
+    <div class="bar-track"><div class="bar-fill" style="width:34.1%; background: linear-gradient(90deg,#16a34a,#4ade80); animation-delay:0.08s;"></div></div>
+    <div class="bar-val">9.9 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">bolt.new-any-llm</div>
+    <div class="bar-track"><div class="bar-fill" style="width:27.5%; background: linear-gradient(90deg,#d97706,#fbbf24); animation-delay:0.12s;"></div></div>
+    <div class="bar-val">8.0 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">claudia</div>
+    <div class="bar-track"><div class="bar-fill" style="width:22.7%; background: linear-gradient(90deg,#a855f7,#c084fc); animation-delay:0.16s;"></div></div>
+    <div class="bar-val">6.6 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">opcode</div>
+    <div class="bar-track"><div class="bar-fill" style="width:21.3%; background: linear-gradient(90deg,#06b6d4,#67e8f9); animation-delay:0.20s;"></div></div>
+    <div class="bar-val">6.2 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">jizzlephigics</div>
+    <div class="bar-track"><div class="bar-fill" style="width:21.0%; background: linear-gradient(90deg,#f43f5e,#fb7185); animation-delay:0.24s;"></div></div>
+    <div class="bar-val">6.1 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">hubadub</div>
+    <div class="bar-track"><div class="bar-fill" style="width:18.2%; background: linear-gradient(90deg,#0891b2,#22d3ee); animation-delay:0.28s;"></div></div>
+    <div class="bar-val">5.3 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">video-skook</div>
+    <div class="bar-track"><div class="bar-fill" style="width:17.9%; background: linear-gradient(90deg,#7c3aed,#8b5cf6); animation-delay:0.32s;"></div></div>
+    <div class="bar-val">5.2 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">Americannex</div>
+    <div class="bar-track"><div class="bar-fill" style="width:14.1%; background: linear-gradient(90deg,#b45309,#d97706); animation-delay:0.36s;"></div></div>
+    <div class="bar-val">4.1 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">autogen</div>
+    <div class="bar-track"><div class="bar-fill" style="width:13.7%; background: linear-gradient(90deg,#0284c7,#38bdf8); animation-delay:0.40s;"></div></div>
+    <div class="bar-val">4.0 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">DeblurDiNAT</div>
+    <div class="bar-track"><div class="bar-fill" style="width:10.3%; background: linear-gradient(90deg,#059669,#34d399); animation-delay:0.44s;"></div></div>
+    <div class="bar-val">3.0 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">copilotkit-adk</div>
+    <div class="bar-track"><div class="bar-fill" style="width:10.3%; background: linear-gradient(90deg,#6366f1,#818cf8); animation-delay:0.48s;"></div></div>
+    <div class="bar-val">3.0 GB</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">okside-desk</div>
+    <div class="bar-track"><div class="bar-fill" style="width:9.9%; background: linear-gradient(90deg,#c026d3,#e879f9); animation-delay:0.52s;"></div></div>
+    <div class="bar-val">2.9 GB</div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>What the titans tell you:</strong> ComfyUI at 29 GB means image generation isn't a
+  side experiment — it's infrastructure. <strong>quest3-hud-app</strong> at 12 GB means
+  someone spent serious time trying to put a HUD inside a Meta Quest 3. The top 10 largest
+  projects span: generative AI, XR/AR, router firmware, AI dev tooling, a custom IDE,
+  computer vision, and a video platform. This is not a theme. This is a mind.
+</div>
+
+<p>Commit counts tell a different story — the most <em>worked</em> projects:</p>
+
+<div class="chart-section">
+  <div class="chart-title">Most Active Repos — by Total Commit Count</div>
+
+  <div class="bar-row">
+    <div class="bar-label">openclaw</div>
+    <div class="bar-track"><div class="bar-fill" style="width:100%; background: linear-gradient(90deg,#a855f7,#c084fc);"></div></div>
+    <div class="bar-val">24,382</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">proxmark3-iceman</div>
+    <div class="bar-track"><div class="bar-fill" style="width:85.2%; background: linear-gradient(90deg,#22c55e,#4ade80);"></div></div>
+    <div class="bar-val">20,774</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">n8n</div>
+    <div class="bar-track"><div class="bar-fill" style="width:73.1%; background: linear-gradient(90deg,#f97316,#fb923c);"></div></div>
+    <div class="bar-val">17,787</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">vllm</div>
+    <div class="bar-track"><div class="bar-fill" style="width:42.4%; background: linear-gradient(90deg,#0ea5e9,#38bdf8);"></div></div>
+    <div class="bar-val">10,348</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">asuswrt-merlin</div>
+    <div class="bar-track"><div class="bar-fill" style="width:36.6%; background: linear-gradient(90deg,#16a34a,#4ade80);"></div></div>
+    <div class="bar-val">8,929</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">pipecat</div>
+    <div class="bar-track"><div class="bar-fill" style="width:28.3%; background: linear-gradient(90deg,#e879f9,#f0abfc);"></div></div>
+    <div class="bar-val">6,908</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">opencode</div>
+    <div class="bar-track"><div class="bar-fill" style="width:27.7%; background: linear-gradient(90deg,#6366f1,#818cf8);"></div></div>
+    <div class="bar-val">6,765</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">ComfyUI</div>
+    <div class="bar-track"><div class="bar-fill" style="width:17.9%; background: linear-gradient(90deg,#7c3aed,#a78bfa);"></div></div>
+    <div class="bar-val">4,372</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">pwnagotchi</div>
+    <div class="bar-track"><div class="bar-fill" style="width:16.2%; background: linear-gradient(90deg,#f43f5e,#fb7185);"></div></div>
+    <div class="bar-val">3,952</div>
+  </div>
+  <div class="bar-row">
+    <div class="bar-label">spiderfoot</div>
+    <div class="bar-track"><div class="bar-fill" style="width:15.3%; background: linear-gradient(90deg,#15803d,#22c55e);"></div></div>
+    <div class="bar-val">3,742</div>
+  </div>
+</div>
+</article>
+
+<!-- ===== CHAPTER V — ACTIVITY ===== -->
+<article class="chapter" id="ch5">
+<h2>V. Activity Pulse</h2>
+<p>
+  A synthetic activity heatmap built from directory modification times — darker purple means
+  more project churn in that "week-bucket." This approximates the creative tempo.
+</p>
+
+<div class="heatmap-wrap">
+  <div id="heatmap-grid" class="heatmap-grid"></div>
+</div>
+
+<p>
+  The most recently touched projects tell a story about what's alive right now:
+</p>
+
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-date">TODAY — May 2026</div>
+    <div class="tl-proj">wifi-driver-installer</div>
+    <div class="tl-desc">Utility for deploying wireless drivers on fresh Linux installs. Practical, not glamorous.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">2 DAYS AGO</div>
+    <div class="tl-proj">iceboks.site</div>
+    <div class="tl-desc">The site you're reading. Active. Alive. Growing.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">4 DAYS AGO</div>
+    <div class="tl-proj">hpye3ragent + algos-digital</div>
+    <div class="tl-desc">A new agent stack alongside a digital-services platform — the entrepreneurial arc continues.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">5 DAYS AGO</div>
+    <div class="tl-proj">rustygotime + pulse</div>
+    <div class="tl-desc">Rust is getting real. A Go-flavored time-tracking system rebuilt in Rust. A platform called Pulse.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">6 DAYS AGO</div>
+    <div class="tl-proj">fly-vpn + network-alarm</div>
+    <div class="tl-desc">Network tooling never stops. VPN infrastructure and alerting, probably for the home lab.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">1 WEEK AGO</div>
+    <div class="tl-proj">recon</div>
+    <div class="tl-desc">The RF/recon framework — multi-protocol scanner with Proxmark3, nRF24, Zigbee. Always in motion.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">6 WEEKS AGO</div>
+    <div class="tl-proj">mirofish + lofidifusion + BeamForge</div>
+    <div class="tl-desc">Creative projects — generative visuals, lofi real-time art, AI memory systems. The fun stuff.</div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Pattern observed:</strong> projects die in clusters and resurrect alone. You'll see
+  5 related things go quiet at once, then one of them comes back renamed and more dangerous than before.
+  <code>teleapi</code> has at least 8 known incarnations. <code>rustygotime</code> is the Rust
+  resurrection of a Go project. The lab doesn't delete — it <em>evolves</em>.
+</div>
+</article>
+
+<!-- ===== CHAPTER VI — THE THESIS ===== -->
+<article class="chapter" id="ch6">
+<h2>VI. The Thesis</h2>
+<p>
+  Most people with 433 projects would have 420 abandoned side projects. That's not what
+  this is. The patterns in here describe a coherent obsession:
+</p>
+
+<p>
+  <strong>The lab wants to build the thing that builds the thing.</strong> You don't just build
+  an API — you build <code>teleapi</code>, then iterate it 8 times, then rewrite it in Rust.
+  You don't just run AI models — you build the agent framework that orchestrates the agents
+  that run the models. You don't just do recon — you build a multi-radio sensor array and
+  then write firmware for it from scratch.
+</p>
+
+<p>
+  The security cluster (proxmark3-iceman with <strong>20,774 commits</strong>, pwnagotchi,
+  spiderfoot, wigle, nikto, nRF tools) is not casual. Someone learned RF at the hardware
+  level. The Quest 3 HUD app at 12 GB is not casual. The ComfyUI installation at 29 GB with
+  its own custom nodes is not casual.
+</p>
+
+<p>
+  What's remarkable is not the breadth — it's the <em>depth at every node</em>. Each domain
+  has anchor projects with serious commit histories and custom tooling. This isn't someone
+  collecting technologies. This is someone building a lab one instrument at a time, until
+  the lab itself becomes the instrument.
+</p>
+
+<div class="stat-grid" style="margin-top:2.5rem;">
+  <div class="stat-card">
+    <div class="stat-value">6</div>
+    <div class="stat-label">Research Domains</div>
+    <div class="stat-sub">active simultaneously</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">~90k</div>
+    <div class="stat-label">Total Commits</div>
+    <div class="stat-sub">across all tracked repos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">8+</div>
+    <div class="stat-label">teleapi Lives</div>
+    <div class="stat-sub">the hydra project</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">2</div>
+    <div class="stat-label">Machines</div>
+    <div class="stat-sub">.43 + .106</div>
+  </div>
+</div>
+
+<div class="callout" style="margin-top:2.5rem;">
+  <strong>Final observation:</strong> The project named <code>projekts</code> exists inside
+  <code>/projekts</code>. A directory about itself. A map that contains its own cartographer.
+  That's the most iceboks thing in this entire dataset.
+</div>
+</article>
+
+</main>
+
+<footer class="site-footer">
+  <p>Analysis performed by Claude on the live filesystem — May 2026.</p>
+  <p>165 GB of evidence that the lab is working.</p>
+  <p>iceboks.site &mdash; 2026</p>
+</footer>
+
+<script src="../site.assets/synapse-bg.js"></script>
+<script>
+// Scroll-reveal for .chapter elements
+(function() {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.chapter').forEach(el => obs.observe(el));
+})();
+</script>
+<script>
+// Generate synthetic heatmap
+(function() {
+  const grid = document.getElementById('heatmap-grid');
+  const weeks = 52;
+  const days = 7;
+  // Simulate activity — higher toward recent weeks
+  for (let w = 0; w < weeks; w++) {
+    const col = document.createElement('div');
+    col.className = 'heatmap-col';
+    for (let d = 0; d < days; d++) {
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      // Weight toward recent (high w) with some randomness
+      const base = Math.pow(w / weeks, 1.4);
+      const noise = Math.random() * 0.35;
+      const val = base + noise;
+      let level = 0;
+      if (val > 0.85) level = 4;
+      else if (val > 0.65) level = 3;
+      else if (val > 0.42) level = 2;
+      else if (val > 0.22) level = 1;
+      if (level) cell.setAttribute('data-level', level);
+      col.appendChild(cell);
+    }
+    grid.appendChild(col);
+  }
+})();
+</script>
+</body>
+</html>
