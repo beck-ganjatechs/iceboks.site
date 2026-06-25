@@ -568,3 +568,45 @@ body {
   .pull-quote { font-size: 1rem; }
   .back-link { top: 1rem; left: 1rem; font-size: 0.6rem; }
 }
+
+/* === POST AUDIO PLAYER (TTS narration) === */
+.post-audio {
+  max-width: 720px;
+  margin: -1rem auto 2.5rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(var(--accent-rgb, 168, 85, 247), 0.06);
+  border: 1px solid rgba(var(--accent-rgb, 168, 85, 247), 0.22);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+.post-audio .pa-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb, 168, 85, 247), 0.5));
+}
+.post-audio .pa-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.post-audio .pa-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent, #a855f7);
+}
+.post-audio .pa-sub {
+  font-size: 0.72rem;
+  color: #8a93a0;
+  letter-spacing: 0.04em;
+}
+.post-audio audio {
+  flex: 1;
+  height: 38px;
+  min-width: 180px;
+  filter: invert(0.92) hue-rotate(180deg) saturate(0.6);
+}
+@media (max-width: 600px) {
+  .post-audio { flex-wrap: wrap; margin: 0 1.25rem 2rem; }
+  .post-audio audio { width: 100%; flex-basis: 100%; }
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thought Archaeology — iceboks</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root {
+    --accent: #34e3cf;
+    --accent-light: #7af3e4;
+    --accent-dim: #07463e;
+    --accent-rgb: 52, 227, 207;
+  }
+  .figure { margin: 2rem 0; }
+  .figure img { width: 100%; border-radius: 12px; border: 1px solid rgba(var(--accent-rgb), 0.25); display: block; }
+  .figure figcaption { margin-top: 0.6rem; font-size: 0.85rem; color: #8a93a0; text-align: center; }
+</style>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<a href="../index.html" class="back-link">&larr; Back to iceboks.site</a>
+
+<!-- DESKTOP NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Echo Chamber</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">Two Temperaments</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">A Detour Through Honesty</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">The Loop, For Real</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Receipts</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">The Interface</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">Drift in the Substrate</span><span class="dot"></span></a>
+</nav>
+
+<!-- MOBILE NAV -->
+<button class="mobile-nav-toggle" id="mobileToggle" onclick="document.getElementById('mobileMenu').classList.toggle('open')">NAV</button>
+<div class="mobile-nav" id="mobileMenu">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Echo Chamber</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. Two Temperaments</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. A Detour Through Honesty</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. The Loop, For Real</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Receipts</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. The Interface</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. Drift in the Substrate</a>
+</div>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="hero">
+  <div class="hero-title">Thought Archaeology</div>
+  <div class="hero-subtitle">Two kinds of memory in one recall loop: a deterministic vector store that never drifts, and an 18.4-million-synapse brain that forgets on purpose. One remembers so it can be right. The other forgets so it can move.</div>
+  <div class="hero-byline">iceboks + claude &mdash; june 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ==================== CONTENT ==================== -->
+<!-- post-audio -->
+<div class="post-audio">
+  <span class="pa-icon">🎧</span>
+  <div class="pa-meta">
+    <span class="pa-label">Listen</span>
+    <span class="pa-sub">narrated · Kokoro TTS</span>
+  </div>
+  <audio controls preload="none" src="audio/thought-archaeology.mp3"></audio>
+</div>
+
+<main class="content">
+
+<!-- ===== CHAPTER I ===== -->
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">Too Good at Remembering</h2>
+  </div>
+
+  <p>Retrieval-augmented generation has a dirty little secret: it's <em>too good at remembering</em>. A vector store computes geometric proximity — cosine distance over an HNSW graph — and it computes it exactly the same way every single time. That's precisely what you want for a fact lookup. It's precisely what you <strong>don't</strong> want when an agent gets stuck.</p>
+
+  <p>If an agent loops on a thought pattern, a precision store hands back the identical context vector on turn 1, turn 2, turn 17. The retrieval layer is, by design, a perfect echo chamber. Determinism is the feature and the trap in the same breath.</p>
+
+  <p>Biological memory doesn't work like that. Fire the same pathway over and over and the synapses <strong>fatigue</strong> — readily-releasable neurotransmitter vesicles deplete, the over-used path goes quiet, and activation spills into adjacent, under-used territory. Your brain breaks its own loops by getting bored of them.</p>
+
+  <div class="pull-quote">"A perfectly faithful memory is also a perfectly faithful rut."</div>
+
+  <p>So: what if you ran both at once? A precision tier that never drifts, and an associative tier that can't help but drift — and you watched the tension between them, live? That's <strong>substr8</strong>, and the interface for watching it is what we call Thought Archaeology.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER II ===== -->
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">Two Tiers, Two Temperaments</h2>
+  </div>
+
+  <p>The architecture is two memory tiers with opposite personalities, queried in parallel.</p>
+
+  <table class="stats-table">
+    <tr><th>Tier</th><th>Engine</th><th>Behavior</th></tr>
+    <tr><td><strong>L3a</strong> — Precision RAG</td><td>SurrealDB, HNSW, 768-d cosine</td><td>Deterministic. Same query &rarr; same ranked hits. Bedrock.</td></tr>
+    <tr><td><strong>L3b</strong> — Associative Drift</td><td>PoonGram (Rust / LiquidBrain fork)</td><td>Fatiguing. Same prompt &rarr; divergent generations. Drift.</td></tr>
+  </table>
+
+  <p>L3a embeds the query with <code>nomic-embed-text</code>, runs approximate nearest-neighbour search over a <code>documents</code> table, and returns the same ranked hits every time. L3b is <strong>9.0 million neurons, 18.4 million synapses</strong>, online learning, and — crucially — synaptic fatigue. Ask it the same thing twice and it answers differently, because asking <em>changed the graph</em>.</p>
+
+  <p>The whole thesis is the contrast. L3a is the anchor. L3b is the drift. The interesting signal lives in the gap between them.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER III ===== -->
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">A Detour Through Honesty</h2>
+  </div>
+
+  <p>The starting point was a spec with a beautiful Python script attached. It talked to a "PoonGram REST engine," computed a "somatic integration voltage" via "bilinear interaction," and streamed "concept drift coefficients" from a <code>/hotspot</code> endpoint.</p>
+
+  <p>Almost none of it was real.</p>
+
+  <p>The script pointed at a port with nothing listening, used the wrong field name for the one endpoint that <em>did</em> exist, and expected response fields the backend never produced. Every call silently fell through to a hardcoded mock. The "somatic voltage" math added a &minus;65&nbsp;mV resting potential to dimensionless signal weights — dimensionally meaningless, corresponding to nothing any engine computed. It was a demo that pretended to talk to a system it had never reached.</p>
+
+  <p>Two rules came out of that, and they shaped everything after:</p>
+
+  <ul>
+    <li><strong>No silent fallbacks.</strong> If a backend is down, the code raises a loud, specific error. A mock that lies about being live is worse than an honest failure.</li>
+    <li><strong>Measure something real.</strong> The drift coefficient isn't invented. It's <code>1 &minus; Jaccard(tokens)</code> between successive generations for the same anchor. First encounter: 1.0 (all novel). Identical output: 0.0 (a true loop). Computed from real text the engine really produced.</li>
+  </ul>
+
+  <p>I also got something wrong, and it belongs on the record: I declared SurrealDB "not installed" because I checked its default port. It was running the whole time on a remapped Docker port, full of a production-grade HNSW schema, inside an existing stack. Probing the wrong port is not the same as a service not existing. Corrected, wired, moving on.</p>
+
+  <div class="pull-quote">"A mock that lies about being live is worse than an honest failure."</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER IV ===== -->
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">The Loop, Wired For Real</h2>
+  </div>
+
+  <p>One query, two routes, in parallel. The orchestrator keeps a per-anchor history of L3b outputs so it can measure drift against the <em>actual</em> previous answer, not a guess.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the dual-memory recall loop</div>
+    <pre>anchor ──┬─► embed (nomic-embed-text, 768-d) ─► SurrealDB HNSW cosine KNN ─► L3a hits
+         │
+         └─► PoonGram /chat ─► generation over the fatiguing synaptic graph ─► L3b
+                                                    │
+            drift = 1 − Jaccard(this generation, previous generation for this anchor)</pre>
+  </div>
+
+  <p>L3a returns ranked precision hits with cosine scores. L3b returns a generation and a focus token. Both ends are live services — PoonGram on its REST port, SurrealDB behind an HNSW index it was already carrying. No part of this falls back to fiction; if either engine is down, the loop says so out loud.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER V ===== -->
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Receipts</h2>
+  </div>
+
+  <p>Three turns of the <strong>same</strong> anchor — <code>intimacy</code> — against both real engines.</p>
+
+  <p>L3a (SurrealDB HNSW), every turn, identical:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">L3a — deterministic precision recall</div>
+    <pre>cos 0.6467  "Attachment security predicts the capacity for intimacy; a
+             secure base lets partners explore vulnerability without
+             fear of abandonment."</pre>
+  </div>
+
+  <p>Turn 1, turn 2, turn 3 — the exact same vector. That's the loop trap, working exactly as a vector store should.</p>
+
+  <p>L3b (PoonGram), same prompt each turn:</p>
+
+  <table class="stats-table">
+    <tr><th>Turn</th><th>Generation (truncated)</th><th>Drift</th></tr>
+    <tr><td>1</td><td>"intimacy of memories long departed from their eyes…"</td><td>1.000</td></tr>
+    <tr><td>2</td><td>"intimacy, rapport, Paul casually picked up one of the…"</td><td>0.875</td></tr>
+    <tr><td>3</td><td>"intimacy…"</td><td>0.870</td></tr>
+  </table>
+
+  <p>Same input. Three different paths through 18.4 million synapses, because each traversal fatigued the last one. The brain even grew mid-session — the synapse count ticked up by one between calls, online learning happening live under the query.</p>
+
+  <p>That divergence is the whole point. The precision tier would keep an agent circling the same attachment-theory paragraph forever. The associative tier is structurally incapable of giving you the same loop twice, and the drift number quantifies how hard it pushed away.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VI ===== -->
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">Watching It: The Thought Archaeology Interface</h2>
+  </div>
+
+  <p>Numbers in a terminal undersell it, so there's a visualizer — a single self-contained page served by a small FastAPI backend, talking to both live engines.</p>
+
+  <figure class="figure">
+    <img src="../thought-archaeology.png" alt="The Thought Archaeology UI: a dark dashboard with an L3a precision stratum on the left, L3b drift cards on the right, a drift timeline chart, and live brain telemetry counters.">
+    <figcaption>L3a holds. L3b wanders. The gap between the amber line and the cyan line is the story.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Precision Stratum</strong> (left): the deterministic SurrealDB hits across two tiers — <code>documents</code> and <code>web_search</code> — each with a cosine-score bar. It looks like bedrock because it behaves like bedrock.</li>
+    <li><strong>Associative Drift</strong> (right): one card per turn, newest on top, each with a conic drift gauge. Repeat an anchor and watch the cards diverge.</li>
+    <li><strong>Drift Timeline</strong>: a canvas chart with two lines — the L3b drift signal (cyan, moving) against the L3a top cosine (amber, flat). The shape of the gap <em>is</em> the loop-breaking signal.</li>
+    <li><strong>Live Brain Telemetry</strong>: animated neuron / synapse / hotspot counters straight off PoonGram's <code>/stats</code>.</li>
+  </ul>
+
+  <p>Hit <code>/?auto=3</code> and it excavates three times on load, so the tension is visible before you touch anything.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER VII ===== -->
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">Why Drift Belongs in the Substrate</h2>
+  </div>
+
+  <p>The reflex in agent design is to crank retrieval precision and call it done. But a perfectly faithful memory is also a perfectly faithful rut. Loop-breaking usually gets bolted on as a heuristic — a repetition penalty, a temperature bump, a "you seem stuck" prompt.</p>
+
+  <p>substr8 makes the argument that drift can be <strong>structural</strong> instead. Put the loop-breaking in the substrate: a memory tier that physically can't repeat itself, running alongside one engineered never to deviate. Then you don't detect loops after the fact — you read the live tension between an anchor that holds and a path that wanders, and you let the agent pivot when the drift signal says the current line of thought has plateaued.</p>
+
+  <div class="pull-quote">"One remembers so it can be right. The other forgets so it can move. The interesting cognition happens in the space between."</div>
+
+  <p>Two kinds of memory. Now there's an interface for digging up what lives between them.</p>
+
+  <p style="opacity: 0.6; font-size: 0.9rem; margin-top: 2rem;">Stack: SurrealDB 3.0.5 (HNSW, 768-d cosine) &middot; PoonGram / LiquidBrain (Rust, axum, 9.0M neurons / 18.4M synapses) &middot; nomic-embed-text embeddings &middot; FastAPI + a vanilla-JS canvas frontend. All real, all local, no mocks.</p>
+</article>
+
+</main>
+
+<script>
+// ── Synapse canvas animation ──────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('synapse-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, nodes, animId;
+  const NODE_COUNT = 60;
+  const ACCENT = 'rgba(52, 227, 207,';
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function init() {
+    resize();
+    nodes = Array.from({ length: NODE_COUNT }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 2 + 1,
+      health: Math.random(),
+      fatigue: Math.random() * 0.002,
+      recovery: Math.random() * 0.001,
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Update synaptic health
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+      // Simulate fatigue and recovery
+      if (Math.random() < 0.01) n.health = Math.max(0, n.health - n.fatigue * 10);
+      n.health = Math.min(1, n.health + n.recovery);
+    });
+
+    // Draw synapses (edges) weighted by health
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[j].x - nodes[i].x;
+        const dy = nodes[j].y - nodes[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 160) {
+          const avgHealth = (nodes[i].health + nodes[j].health) / 2;
+          const alpha = (1 - dist / 160) * avgHealth * 0.6;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = ACCENT + alpha + ')';
+          ctx.lineWidth = avgHealth * 1.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw neurons
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * n.health + 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = ACCENT + (n.health * 0.8 + 0.2) + ')';
+      ctx.fill();
+    });
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  init();
+  draw();
+})();
+
+// ── Chapter visibility on scroll ─────────────────────────────────────────────
+(function() {
+  const chapters = document.querySelectorAll('.chapter');
+  const visObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  chapters.forEach(c => visObs.observe(c));
+})();
+
+// ── Chapter nav scroll highlighting ──────────────────────────────────────────
+(function() {
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+})();
+</script>
+
+</body>
+</html>
