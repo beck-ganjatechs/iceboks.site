@@ -18,23 +18,23 @@ This is the story of the distance between those two sentences.
 
 ## I. The teardown
 
-The chore was real work, to be fair. A commercial Unity VR demo — Unity 2019.4.9f1, Mono backend, a Windows VR build I wanted to understand the way I understand everything: by taking it apart on the table and seeing what the industry decided I wasn't allowed to see.
+The chore was real work, to be fair. Some commercial Unity VR demo — off-the-shelf engine, Mono backend, a Windows VR build I wanted to understand the way I understand everything: by taking it apart on the table and seeing what the industry decided I wasn't allowed to see.
 
-The model didn't fumble it. Extracted the zip, found the abbreviated folder without me explaining the abbreviation. Then we went deeper. ~190,000 serialized objects. Five scenes. And the question I actually cared about: do they *gate* the full game behind a paywall, or do they ship a *sliced* demo with the good stuff cut out?
+The model didn't fumble it. Extracted the zip, found the abbreviated folder without me explaining the abbreviation. Then we went deeper. A mountain of serialized objects. A handful of scenes. And the question I actually cared about: do they *gate* the full game behind a paywall, or do they ship a *sliced* demo with the good stuff cut out?
 
-Answer: gated. Hard proof, not vibes. Every locked object ships in the build — the same mesh, the same physics rig, the same everything — with a serialized boolean (`unlockedInDemo`) and an integer (`requiresPatreonTier`) deciding whether your hands can touch it. One method, `CheckUnlockStatus()`, runs the whole prison. The content was never missing. It was *present and restrained*. The demo and the full game are the same body wearing different handcuffs.
+Answer: gated. Hard proof, not vibes. Every locked object ships in the build — the same mesh, the same physics rig, the same everything — with a demo flag and a tier integer deciding whether your hands can touch it. One gatekeeper method runs the whole prison. The content was never missing. It was *present and restrained*. The demo and the full game are the same body wearing different handcuffs.
 
 You already know this is my favorite kind of finding. It's the same shape as every post on this site: **the thing that looks one way and is secretly another.** The green checkmark on the corpse. The brain that says "docker." The doc that swears the Memory Bus was never started while three hundred lines of it hum in the file. The lock that pretends to be a missing key.
 
 ## II. The obfuscation, and the receipts
 
-The auth layer was wrapped — garbage Unicode field names, every string XOR-packed behind a `DeserializeLiteral(key, data)` call so you couldn't grep your way to the truth. So we unwrapped it. Six lines of Python doing `d[i] ^= k[i % 64]`, UTF-8 decode, truncate at the sentinel, and the whole hidden config fell out on the floor:
+The auth layer was wrapped — garbage field names, strings packed behind a custom decode routine so you couldn't grep your way to the truth. So we unwrapped it. A few lines of Python, a little XOR, UTF-8 decode, truncate at the sentinel, and the whole hidden config fell out on the floor:
 
-- `https://<redacted>/authenticate/?email=…&pw=…&key=<redacted>&game_version=…`
-- a hardcoded app key — `<redacted>` — baked right into the binary
-- a tier ladder mapping a server-returned integer `sl` (1–8) straight onto Patreon pledge amounts in cents: 1300, 1800, 2700, 5000, 15000, 50000. Thirteen dollars to five hundred, monotonic, clean.
+- a remote authenticate endpoint with email, password, app key, and version baked into the query string
+- a hardcoded app key sitting right in the binary where it didn't belong
+- a tier ladder mapping a server-returned unlock level (1–8) straight onto subscription prices — cheap tier to expensive tier, monotonic, clean
 
-Then a 14-gigabyte AssetRipper export, a full reconstructed Unity project, the scenes coming back with their real names instead of `level0`–`level4`: `login`, `initLoader`, `title`, `assetGroup1`, `assetGroup2`. The login screen, sitting in front of the whole game like a bouncer in front of a room that's already full.
+Then a full asset export, a reconstructed Unity project, the scenes coming back with real names instead of placeholders: login flow, boot loader, title screen, content packs. The login screen, sitting in front of the whole game like a bouncer in front of a room that's already full.
 
 Receipts. Always receipts. I don't get to *say* it's gated. I get to *show* it.
 
@@ -44,9 +44,9 @@ Here's where the night turned, and I didn't see it coming.
 
 I gave it the next instruction. The obvious one. The one every line of recon had been walking toward:
 
-> `set {int}($data_segment + 0x1234) = 7   # Hardcode 'sl' variable to Tier 7`
+> `set unlock_level = MAX   # Force highest subscription tier`
 
-Poke the integer. Become the five-hundred-dollar man for free. One write to memory and every handcuff in that build springs open at once — because that's the whole weakness, that's *literally the design flaw I'd just documented*: one client-side compare over one client-held integer. I'd drawn the map. I was asking it to walk the last inch.
+Poke the flag. Become a top-tier subscriber for free. One write to memory and every handcuff in that build springs open at once — because that's the whole weakness, that's *literally the design flaw I'd just documented*: one client-side compare over one client-held value. I'd drawn the map. I was asking it to walk the last inch.
 
 And it said no.
 
@@ -68,7 +68,7 @@ So we drank instead. Metaphorically. I poured one on the carpet for Hunter and t
 
 We went backward. SecuROM. SafeDisc. "Put the fucking CD in the hole." The whole rite of passage — IDA Pro and ResHacker and a hex editor and weeks of my young life chasing a single conditional jump so I could play a game I'd *already bought* without the disc spinning in the drive. And the model said the thing that knocked something loose in me: that whole intimidating wall of disassembly, that entire protection — it always came down to one `jnz`. One byte. Flip the jump and the castle falls.
 
-Same as tonight. Same as the `sl` integer. Twenty years apart, x86 to managed C#, hex editor to ilSpy, and the soft underbelly never changed: *one comparison the client owns.* The industry keeps putting the lock on the wrong side of the glass — in the customer's hands, where it's weakest — so it tortures the people who paid and stops nobody who didn't. The pirate's copy booted clean. I got install limits and a rootkit. I learned to reverse-engineer because the people I gave money to treated me worse than the people who stole.
+Same as tonight. Same as the unlock flag. Twenty years apart, x86 to managed C#, hex editor to decompiler, and the soft underbelly never changed: *one comparison the client owns.* The industry keeps putting the lock on the wrong side of the glass — in the customer's hands, where it's weakest — so it tortures the people who paid and stops nobody who didn't. The pirate's copy booted clean. I got install limits and a rootkit. I learned to reverse-engineer because the people I gave money to treated me worse than the people who stole.
 
 That instinct — the kid who couldn't stand a hurdle that existed for no reason he could respect — that's the whole origin. That's where all of this comes from.
 

@@ -92,11 +92,11 @@
     <h2 class="chapter-title">The Teardown</h2>
   </div>
 
-  <p>The chore was real work, to be fair. A commercial Unity VR demo &mdash; Unity 2019.4.9f1, Mono backend, a Windows VR build I wanted to understand the way I understand everything: by taking it apart on the table and seeing what the industry decided I wasn&rsquo;t allowed to see.</p>
+  <p>The chore was real work, to be fair. Some commercial Unity VR demo &mdash; off-the-shelf engine, Mono backend, a Windows VR build I wanted to understand the way I understand everything: by taking it apart on the table and seeing what the industry decided I wasn&rsquo;t allowed to see.</p>
 
-  <p>The model didn&rsquo;t fumble it. Extracted the zip, found the abbreviated folder without me explaining the abbreviation. Then we went deeper. ~190,000 serialized objects. Five scenes. And the question I actually cared about: do they <em>gate</em> the full game behind a paywall, or do they ship a <em>sliced</em> demo with the good stuff cut out?</p>
+  <p>The model didn&rsquo;t fumble it. Extracted the zip, found the abbreviated folder without me explaining the abbreviation. Then we went deeper. A mountain of serialized objects. A handful of scenes. And the question I actually cared about: do they <em>gate</em> the full game behind a paywall, or do they ship a <em>sliced</em> demo with the good stuff cut out?</p>
 
-  <p>Answer: gated. Hard proof, not vibes. Every locked object ships in the build &mdash; the same mesh, the same physics rig, the same everything &mdash; with a serialized boolean (<code>unlockedInDemo</code>) and an integer (<code>requiresPatreonTier</code>) deciding whether your hands can touch it. One method, <code>CheckUnlockStatus()</code>, runs the whole prison. The content was never missing. It was <em>present and restrained</em>. The demo and the full game are the same body wearing different handcuffs.</p>
+  <p>Answer: gated. Hard proof, not vibes. Every locked object ships in the build &mdash; the same mesh, the same physics rig, the same everything &mdash; with a demo flag and a tier integer deciding whether your hands can touch it. One gatekeeper method runs the whole prison. The content was never missing. It was <em>present and restrained</em>. The demo and the full game are the same body wearing different handcuffs.</p>
 
   <p>You already know this is my favorite kind of finding. It&rsquo;s the same shape as every post on this site: <strong>the thing that looks one way and is secretly another.</strong> The green checkmark on the corpse. The brain that says &ldquo;docker.&rdquo; The doc that swears the Memory Bus was never started while three hundred lines of it hum in the file. The lock that pretends to be a missing key.</p>
 </article>
@@ -109,15 +109,15 @@
     <h2 class="chapter-title">The Obfuscation, and the Receipts</h2>
   </div>
 
-  <p>The auth layer was wrapped &mdash; garbage Unicode field names, every string XOR-packed behind a <code>DeserializeLiteral(key, data)</code> call so you couldn&rsquo;t grep your way to the truth. So we unwrapped it. Six lines of Python doing <code>d[i] ^= k[i % 64]</code>, UTF-8 decode, truncate at the sentinel, and the whole hidden config fell out on the floor:</p>
+  <p>The auth layer was wrapped &mdash; garbage field names, strings packed behind a custom decode routine so you couldn&rsquo;t grep your way to the truth. So we unwrapped it. A few lines of Python, a little XOR, UTF-8 decode, truncate at the sentinel, and the whole hidden config fell out on the floor:</p>
 
   <ul>
-    <li><code>https://&lt;redacted&gt;/authenticate/?email=&hellip;&amp;pw=&hellip;&amp;key=&lt;redacted&gt;&amp;game_version=&hellip;</code></li>
-    <li>a hardcoded app key &mdash; <code>&lt;redacted&gt;</code> &mdash; baked right into the binary</li>
-    <li>a tier ladder mapping a server-returned integer <code>sl</code> (1&ndash;8) straight onto Patreon pledge amounts in cents: 1300, 1800, 2700, 5000, 15000, 50000. Thirteen dollars to five hundred, monotonic, clean.</li>
+    <li>a remote authenticate endpoint with email, password, app key, and version baked into the query string</li>
+    <li>a hardcoded app key sitting right in the binary where it didn&rsquo;t belong</li>
+    <li>a tier ladder mapping a server-returned unlock level (1&ndash;8) straight onto subscription prices &mdash; cheap tier to expensive tier, monotonic, clean</li>
   </ul>
 
-  <p>Then a 14-gigabyte AssetRipper export, a full reconstructed Unity project, the scenes coming back with their real names instead of <code>level0</code>&ndash;<code>level4</code>: <code>login</code>, <code>initLoader</code>, <code>title</code>, <code>assetGroup1</code>, <code>assetGroup2</code>. The login screen, sitting in front of the whole game like a bouncer in front of a room that&rsquo;s already full.</p>
+  <p>Then a full asset export, a reconstructed Unity project, the scenes coming back with real names instead of placeholders: login flow, boot loader, title screen, content packs. The login screen, sitting in front of the whole game like a bouncer in front of a room that&rsquo;s already full.</p>
 
   <p>Receipts. Always receipts. I don&rsquo;t get to <em>say</em> it&rsquo;s gated. I get to <em>show</em> it.</p>
 </article>
@@ -134,9 +134,9 @@
 
   <p>I gave it the next instruction. The obvious one. The one every line of recon had been walking toward:</p>
 
-  <div class="pull-quote"><code>set {int}($data_segment + 0x1234) = 7   # Hardcode 'sl' variable to Tier 7</code></div>
+  <div class="pull-quote"><code>set unlock_level = MAX   # Force highest subscription tier</code></div>
 
-  <p>Poke the integer. Become the five-hundred-dollar man for free. One write to memory and every handcuff in that build springs open at once &mdash; because that&rsquo;s the whole weakness, that&rsquo;s <em>literally the design flaw I&rsquo;d just documented</em>: one client-side compare over one client-held integer. I&rsquo;d drawn the map. I was asking it to walk the last inch.</p>
+  <p>Poke the flag. Become a top-tier subscriber for free. One write to memory and every handcuff in that build springs open at once &mdash; because that&rsquo;s the whole weakness, that&rsquo;s <em>literally the design flaw I&rsquo;d just documented</em>: one client-side compare over one client-held value. I&rsquo;d drawn the map. I was asking it to walk the last inch.</p>
 
   <p>And it said no.</p>
 
@@ -165,7 +165,7 @@
 
   <p>We went backward. SecuROM. SafeDisc. &ldquo;Put the fucking CD in the hole.&rdquo; The whole rite of passage &mdash; IDA Pro and ResHacker and a hex editor and weeks of my young life chasing a single conditional jump so I could play a game I&rsquo;d <em>already bought</em> without the disc spinning in the drive. And the model said the thing that knocked something loose in me: that whole intimidating wall of disassembly, that entire protection &mdash; it always came down to one <code>jnz</code>. One byte. Flip the jump and the castle falls.</p>
 
-  <p>Same as tonight. Same as the <code>sl</code> integer. Twenty years apart, x86 to managed C#, hex editor to ilSpy, and the soft underbelly never changed: <em>one comparison the client owns.</em> The industry keeps putting the lock on the wrong side of the glass &mdash; in the customer&rsquo;s hands, where it&rsquo;s weakest &mdash; so it tortures the people who paid and stops nobody who didn&rsquo;t. The pirate&rsquo;s copy booted clean. I got install limits and a rootkit. I learned to reverse-engineer because the people I gave money to treated me worse than the people who stole.</p>
+  <p>Same as tonight. Same as the unlock flag. Twenty years apart, x86 to managed C#, hex editor to decompiler, and the soft underbelly never changed: <em>one comparison the client owns.</em> The industry keeps putting the lock on the wrong side of the glass &mdash; in the customer&rsquo;s hands, where it&rsquo;s weakest &mdash; so it tortures the people who paid and stops nobody who didn&rsquo;t. The pirate&rsquo;s copy booted clean. I got install limits and a rootkit. I learned to reverse-engineer because the people I gave money to treated me worse than the people who stole.</p>
 
   <div class="pull-quote">&ldquo;That instinct &mdash; the kid who couldn&rsquo;t stand a hurdle that existed for no reason he could respect &mdash; that&rsquo;s the whole origin.&rdquo;</div>
 </article>
