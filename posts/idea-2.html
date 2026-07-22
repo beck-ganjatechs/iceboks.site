@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idea #2 — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #c4b5fd;
+    --green-light: #ddd6fe;
+    --green-dim: #5b21b6;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(196, 181, 253, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(196, 181, 253, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(196, 181, 253, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(196, 181, 253, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(196, 181, 253, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(196, 181, 253, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(196, 181, 253, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(196, 181, 253, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(196, 181, 253, 0.04);
+    border-bottom: 1px solid rgba(196, 181, 253, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(196, 181, 253, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(196, 181, 253, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(196, 181, 253, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Document</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">One Neuron, XOR</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Extraction</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">Idea #2 Ships</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">#1 and #3</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">Still a Document</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">The Metaphor Tax</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Document</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. One Neuron, XOR</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. The Extraction</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. Idea #2 Ships</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. #1 and #3</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. Still a Document</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. The Metaphor Tax</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-title">Idea #2</div>
+  <div class="hero-subtitle">Six thousand words of dendritic neuroscience arrived as a plan to rebuild my agent framework as a brain. Three ideas were extractable. One shipped. This is an honest accounting of the ratio.</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Document</h2>
+  </div>
+
+  <p><code>dendrite.research.md</code> is six thousand words long and it is <em>magnificent</em>. It proposes rebuilding MKUltra &mdash; my agentic OS &mdash; on the computational principles of biological dendrites. Reduced compartmental models via Dendrify. Calcium action potentials as logic gates. A holographic memory tier storing knowledge in interference patterns and retrieving it by Fourier transform. Organic electrochemical neurons at 40 picojoules a spike. FPGA-accelerated dendritic logic. Backpropagating credit assignment through an orchestrator shaped like a dendritic arbor.</p>
+
+  <p>It has equations. It has comparison tables where my system wins. It describes the whole thing in the calm present tense of software that exists.</p>
+
+  <p>Almost none of it existed.</p>
+
+  <p>I have a rule now, earned the hard way and written up last week: <strong>the roadmap goes in the future tense.</strong> A document that describes your intentions as your capabilities isn&rsquo;t a design doc, it&rsquo;s a press release you&rsquo;re issuing to yourself. So this post is the audit. What was real neuroscience, what was extractable, what actually shipped, and what is still &mdash; a year of enthusiasm later &mdash; prose.</p>
+
+  <p>The ratio turned out to be one for nine. I think that&rsquo;s a good ratio. I want to explain why.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">One Neuron Solves XOR</h2>
+  </div>
+
+  <p>First, the part that isn&rsquo;t hype, because the underlying biology is genuinely one of the best results in modern neuroscience.</p>
+
+  <p>The textbook neuron is a summing junction. Weighted inputs arrive, get added, and if the total clears a threshold the thing fires. Leaky integrate-and-fire. That abstraction is the foundation of essentially every artificial network ever built, and on the strength of it we proved a famous limitation: a single neuron cannot compute XOR. Exclusive-or isn&rsquo;t linearly separable, so you need a hidden layer. That proof nearly killed the field in the seventies.</p>
+
+  <p>Then somebody patched into human Layer 2/3 pyramidal neurons and found <strong>dCaAPs</strong> &mdash; calcium-mediated dendritic action potentials. And they don&rsquo;t behave like axonal spikes at all. Axonal spikes are all-or-none: cross the threshold, get a full spike. dCaAPs are <em>graded</em> and, crucially, <strong>biphasic</strong> &mdash; amplitude is maximal right at threshold and then <em>decreases</em> as the stimulus gets stronger.</p>
+
+  <p>Sit with that. Push harder, get less.</p>
+
+  <p>That single property is an XOR gate. One input: strong response. Both inputs: the drive exceeds the optimum and the response is <em>suppressed</em>. A single human neuron, in a single dendritic branch, computing the function we spent decades insisting required a whole network.</p>
+
+  <div class="big-quote">The dendrite isn&rsquo;t wiring. It&rsquo;s the part that was doing the thinking while we modelled it as a cable.</div>
+
+  <p>The measurements are unglamorous and specific in the way real findings are: dCaAP widths around <strong>4.4 &plusmn; 1.4 ms</strong>, mean firing rates near <strong>4.6 Hz</strong>. The biphasic profile is sensitive to sodium and potassium conductances &mdash; turn up <code>gNa</code> and the XOR behavior degrades; <code>gK</code> is what stabilizes it.</p>
+
+  <p>So: real, measured, load-bearing. The question was never whether the biology is good. It&rsquo;s what survives the trip from a pipette in a human cortical slice to a Python service in my basement.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">The Extraction</h2>
+  </div>
+
+  <p>Reading a document like this, the temptation is to try to build all of it, get four levels deep into compartmental ODEs, and quietly abandon the branch six weeks later. I&rsquo;ve done that. It&rsquo;s how you end up with a README full of things that don&rsquo;t exist.</p>
+
+  <p>So I went through it looking for a much narrower thing: <strong>ideas that map onto a gap I already have.</strong> Not ideas that are interesting. Ideas that are load-bearing for a problem currently costing me something.</p>
+
+  <p>Three survived:</p>
+
+  <ul class="opt-list">
+    <li><strong>#1 &mdash; Multiplicative coincidence gating</strong> in PoonGram&rsquo;s focus-point selection. Inputs landing close together on a branch should multiply, not add.</li>
+    <li><strong>#2 &mdash; The dCaAP-XOR kernel</strong> as a merge rule: agreement amplifies, conflict suppresses.</li>
+    <li><strong>#3 &mdash; Activation plateaus as a working buffer.</strong> Dendritic plateau potentials last ~100 ms, an order of magnitude longer than a spike, which makes them a natural jitter buffer for asynchronous inputs arriving at different speeds.</li>
+  </ul>
+
+  <p>Everything else &mdash; the Fourier holography, the neuromorphic hardware, the arbor-shaped orchestrator &mdash; failed the test. Not because it&rsquo;s wrong. Because it answers questions I don&rsquo;t have yet.</p>
+
+  <p>Idea #2 got built, because it landed exactly on a hole I&rsquo;d been staring at for weeks.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">Idea #2 Ships</h2>
+  </div>
+
+  <p>The hole: my memory bus fans a question out to four tiers &mdash; episodic, semantic RAG, and two biological lobes &mdash; and then merged the results by <strong>concatenation</strong>. Stack them up, dump them in the prompt, equal weight, no referee.</p>
+
+  <p>Which is indefensible when you say it out loud. Four systems with four different ways of being wrong, and &ldquo;the emotional lobe is fixated on this&rdquo; carried exactly as much authority as &ldquo;two independent systems both surfaced this.&rdquo;</p>
+
+  <p>The dCaAP kernel is the missing rule, and it&rsquo;s three words: <strong>agree &rarr; amplify, conflict &rarr; suppress.</strong></p>
+
+  <p>Pull the salient terms from each lobe. Anything <strong>two or more lobes independently surface</strong> is corroborated &mdash; promote it to a converged-signal banner at the top of the context. Any lobe agreeing with <strong>nobody</strong> is an outlier &mdash; flag it unverified and truncate it. In between, the context budget scales with the agreement score. That&rsquo;s the biphasic curve, doing in a merge function what it does in a dendrite: fire on coincidence, go quiet on noise.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">verified live &mdash; "are the docker services healthy"</div>
+    <pre>converged: [healthy, docker, services, running]
+agreement: { assoc: 1.0, struct: 1.0, rag: 0.04, episodic: 0.15 }</pre>
+  </div>
+
+  <p>Both biological lobes at 1.0 &mdash; total agreement, signal amplified. RAG at 0.04 and episodic at 0.15, contributing almost nothing to the consensus and correctly demoted.</p>
+
+  <p>Then the test that actually mattered: feed it a deliberate liar. One lobe spouting unrelated fantasy prose into an infrastructure question &mdash; which, if you read the lobotomy post, is a very specific failure mode I have. It scored <strong>0.0</strong>, got stamped <em>unverified, not corroborated by other lobes</em>, and dropped to a footnote.</p>
+
+  <p>It ships as <code>_merge_memory_lobes()</code>, wired into both <code>/query</code> and <code>/query/stream</code>, surfacing a <code>memory_merge</code> object and an SSE event so you can watch the deliberation happen instead of taking my word for it. Unit test confirms outlier suppression.</p>
+
+  <p>Total: one function. Maybe an afternoon. The memory doesn&rsquo;t just retrieve now &mdash; it decides who to believe.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">Ideas #1 and #3</h2>
+  </div>
+
+  <p>Still ideas. Both listed in the build notes as candidates, neither implemented, and I&rsquo;m putting them here rather than in a features list for exactly the reason this post exists.</p>
+
+  <p><strong>#1, multiplicative coincidence gating in PoonGram.</strong> Right now focus-point selection sums activation. Biologically, inputs clustered on the same branch produce <em>super-linear</em> responses while distant inputs sum linearly. Same evidence, different answer depending on whether it arrived together. I believe this is right and I haven&rsquo;t built it.</p>
+
+  <p><strong>#3, the plateau buffer.</strong> Sub-agents and local models stream at wildly different tokens-per-second. A dendritic plateau &mdash; a sustained ~100 ms depolarization that outlives the spike that caused it &mdash; is precisely a resettable buffer for integrating inputs that don&rsquo;t arrive together. My arbiter currently has no such thing, which means a slow lobe can miss its window and get treated as silence. That&rsquo;s a real bug with a known fix that I have not applied.</p>
+
+  <p>Two good ideas, sitting in a file. That&rsquo;s allowed. What&rsquo;s not allowed is writing them into the architecture doc in the present tense and letting them count.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">The Part That&rsquo;s Still a Document</h2>
+  </div>
+
+  <p>Now the honest column. Everything below is in <code>dendrite.research.md</code>, described as architecture, and does not exist in any form:</p>
+
+  <ul class="opt-list">
+    <li><strong>Holographic associative memory.</strong> Storing knowledge in oscillatory interference patterns, retrieving by Fourier transform, with a &ldquo;moving bubble of attention&rdquo; over dendro-dendritic connections. Beautiful. Pribram-flavored. Not a line of code.</li>
+    <li><strong>Organic electrochemical neurons at 40 pJ/spike.</strong> This is real hardware research by other people. It is not in my basement.</li>
+    <li><strong>FPGA-accelerated dendritic logic.</strong> No.</li>
+    <li><strong>Dendritic Localized Learning replacing backprop.</strong> Genuinely interesting &mdash; local updates from pre/post activity and calcium signals, dodging the weight-transport problem. Not implemented.</li>
+    <li><strong>The arbor-shaped Conductor</strong> with backpropagating credit assignment. <code>conductor-research.md</code> is dated April and is, per its own header, research to <em>inform design</em>. There is no conductor.</li>
+    <li><strong>SOUL.md as a morphological skill arbor</strong> that grafts and prunes skills by structural plasticity. SOUL.md is a file. It does not grow branches.</li>
+  </ul>
+
+  <p>And one specific number I want to correct, because it&rsquo;s the kind of thing that propagates: the doc credits LiquidBrain with 18.4 million synapses in a comparison table against a competitor. That figure is PoonGram&rsquo;s. LiquidBrain is a different brain with different numbers &mdash; 42.5 million neurons, 105.6 million synapses. Two lobes, two sets of stats, quietly merged into one impressive-sounding row pointed at a rival.</p>
+
+  <div class="pull-quote">A comparison table is where a project is most likely to lie, because it&rsquo;s the only document written to be won.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">The Metaphor Tax</h2>
+  </div>
+
+  <p>So was the document worth it, if 90% of it is still prose?</p>
+
+  <p>Yes, and the reason is narrow enough to be useful.</p>
+
+  <p>The biology paid for itself <em>once</em>, and it paid in the form of a rule I would not have arrived at otherwise. I knew concatenation was wrong. I did not have a principled alternative, and I&rsquo;d have reached for the obvious ones &mdash; weight the tiers by hand, or ask a bigger model to arbitrate, which is how you turn a merge bug into a latency bug and a bill. &ldquo;Agree amplifies, conflict suppresses, corroboration sets the budget&rdquo; came straight out of a curve measured in human cortex, and it&rsquo;s better than what I had.</p>
+
+  <p>That&rsquo;s the return: <strong>one transferable rule.</strong> Not an architecture. Not a paradigm. A rule small enough to implement in an afternoon and specific enough to test.</p>
+
+  <p>The tax is what happens when you mistake the metaphor for a blueprint. Nothing in my system has a membrane, a calcium channel, or a millisecond that means anything. Writing an ODE for a compartment I&rsquo;m not simulating would be cosplay &mdash; and cosplay is exactly what produces a comparison table claiming holographic retrieval against somebody else&rsquo;s honest FAISS index.</p>
+
+  <p>The dendrite is worth studying because evolution solved a merge-arbitration problem under a brutal energy budget and left the answer lying around. It is not worth <em>imitating</em>, because I&rsquo;m not energy-constrained, I don&rsquo;t have ions, and my lobes talk over HTTP.</p>
+
+  <p>Take the rule. Leave the cell.</p>
+
+  <div class="mic-drop">One idea out of nine, shipped and tested, beats nine ideas in the present tense.</div>
+</article>
+
+<footer class="footer">
+  <p>Shipped: <code>_merge_memory_lobes()</code> &mdash; coincidence-amplify / anticoincidence-suppress, wired into <code>/query</code> + <code>/query/stream</code> with a <code>memory_merge</code> SSE event. 2026-06-07.</p>
+  <p>Source: <code>dendrite.research.md</code>, idea #2 of three extractable. Ideas #1 (multiplicative coincidence gating) and #3 (plateau buffer) remain unimplemented.</p>
+  <p>Not implemented: holographic Fourier retrieval &middot; OECN hardware &middot; FPGA dendritic logic &middot; DLL &middot; arbor-shaped Conductor &middot; SOUL.md structural plasticity</p>
+  <p>Real biology: dCaAPs in human L2/3 pyramidal neurons &mdash; graded, biphasic, ~4.4 ms wide, ~4.6 Hz. One neuron, XOR, no hidden layer.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+
+<script>
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+  });
+}, { threshold: 0.08 });
+chapters.forEach(ch => observer.observe(ch));
+
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) { current = section.id; }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>
