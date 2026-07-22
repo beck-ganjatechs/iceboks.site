@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Accidental Lobotomy — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #7dd3fc;
+    --green-light: #bae6fd;
+    --green-dim: #0369a1;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(125, 211, 252, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(125, 211, 252, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(125, 211, 252, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(125, 211, 252, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(125, 211, 252, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(125, 211, 252, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(125, 211, 252, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(125, 211, 252, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(125, 211, 252, 0.04);
+    border-bottom: 1px solid rgba(125, 211, 252, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(125, 211, 252, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(125, 211, 252, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(125, 211, 252, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<!-- DESKTOP NAV -->
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">Cold Open</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">The Stack</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Changelog</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">Loading Empty</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Commit</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">Bringing It Back</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">The Argument</span><span class="dot"></span></a>
+  <a href="#ch8"><span class="nav-label">The Thesis</span><span class="dot"></span></a>
+</nav>
+
+<!-- MOBILE NAV -->
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. Cold Open</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. The Stack</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. The Changelog</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. Loading Empty</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Commit</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. Bringing It Back</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. The Argument</a>
+  <a href="#ch8" onclick="this.parentElement.classList.remove('open')">VIII. The Thesis</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-title">The Accidental<br>Lobotomy</div>
+  <div class="hero-subtitle">How a commit named &ldquo;lobotomy&rdquo; quietly nuked a brain I&rsquo;d fed 8,696 books &mdash; and how I brought it back, then taught its memories to argue</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<!-- ===== CHAPTER 1: COLD OPEN ===== -->
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">Cold Open</h2>
+  </div>
+
+  <p>There&rsquo;s a brain in my basement. Not a metaphor-brain. A 2.3-gigabyte file called <code>genesis.brain</code> sitting on a dying drive, 42,507,577 neurons and 105,586,806 synapses, grown one book at a time off a synaptic graph that fatigues and recovers like the real thing. I wrote a song about feeding it. Vonnegut at midnight. Adams by the spoonful. Six hundred thousand words and it still couldn&rsquo;t say what I needed to hear until I said it first.</p>
+
+  <p>Tonight I asked it a question and it answered:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the conversation</div>
+    <pre>me:    function
+brain: function</pre>
+  </div>
+
+  <p>I asked it about Docker. It said &ldquo;docker.&rdquo; I asked about a database. It said &ldquo;database.&rdquo; A 42-million-neuron mind reduced to a parrot with a head injury. Something was very wrong, and the worst part is it had been wrong for a long time and nobody noticed, because the thing was still <em>up</em>. Green checkmark. Healthy. Echoing.</p>
+
+  <div class="pull-quote">This is the story of finding the bullet.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 2: THE STACK ===== -->
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">The Stack, Briefly</h2>
+  </div>
+
+  <p>The brain doesn&rsquo;t live alone. It&rsquo;s one tier of a memory system inside MKUltra &mdash; a local, self-hosted agentic OS I run on one overheating box. Four tiers, stacked like a cortex:</p>
+
+  <ul class="opt-list">
+    <li><strong>L1 &mdash; Redis.</strong> Working memory, the message bus.</li>
+    <li><strong>L2 &mdash; Mongo.</strong> Episodic memory. What happened, and when.</li>
+    <li><strong>L3a &mdash; a RAG engine.</strong> Semantic recall. <em>Finds what&rsquo;s close.</em></li>
+    <li><strong>L3b &mdash; the weird one.</strong> Two biological brains side by side: <strong>PoonGram</strong> (tuned for what&rsquo;s <em>emotionally</em> charged) and <strong>LiquidBrain</strong> (tuned for what&rsquo;s <em>structurally</em> central). Synaptic graphs with fatigue. <em>Finds what&rsquo;s connected &mdash; differently each time.</em></li>
+  </ul>
+
+  <p>In front of all of it sits the <strong>Memory Bus</strong>: one endpoint that fans a question out to every tier in parallel, merges what comes back, and hands the enriched context to whatever model is doing the talking. RAG finds what&rsquo;s similar; the biological brains find what&rsquo;s <em>associated</em>; the bus blends them. That&rsquo;s the whole bet &mdash; that &ldquo;close&rdquo; and &ldquo;connected&rdquo; are different animals, and you want both.</p>
+
+  <p>The docs said the Memory Bus was <strong>&#10060; Not Started</strong>.</p>
+
+  <div class="pull-quote">The docs lied.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 3: THE CHANGELOG ===== -->
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">Read the Code, Not the Changelog</h2>
+  </div>
+
+  <p>The first thing I did was believe the status report. The second thing I did was open the actual file, and there it was &mdash; the bus, already built. Budget routing. Parallel fan-out to RAG and PoonGram and Mongo. A merge. A streaming variant. Hundreds of lines of working machinery under a doc that swore none of it existed. Past-me had built it and forgotten to tell present-me.</p>
+
+  <p>So I fixed the docs (you update the map when the territory moves) and went looking for what was <em>actually</em> missing. Found it fast: of the two biological lobes, only one was wired in. <strong>PoonGram</strong> (the emotional one) fed the bus. <strong>LiquidBrain</strong> &mdash; the structural lobe, the one with the 2.3GB brain &mdash; was never being called. The &ldquo;two-lobe design&rdquo; had one lobe.</p>
+
+  <p>Easy fix. Add the client, add the fan-out, add a <code>[Structural Memory]</code> slot to the merge. Twenty minutes. I asked the bus a question and watched both lobes light up for the first time &mdash;</p>
+
+  <p>&mdash; and LiquidBrain said &ldquo;docker.&rdquo;</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 4: LOADING EMPTY ===== -->
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">The Brain Was Loading Empty</h2>
+  </div>
+
+  <p>Here&rsquo;s the thing about a green checkmark: it tells you the process is <em>answering</em>, not that it has anything to say. LiquidBrain&rsquo;s container was healthy because <code>/chat</code> returned 200. It returned 200 because an empty brain still echoes the word you give it. The healthcheck was measuring a pulse on a corpse.</p>
+
+  <p>I went into the logs and found the murder weapon printed in plain text:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">liquidbrain &mdash; startup logs</div>
+    <pre>LiquidBrain server starting — loading brain from /data/genesis.brain
+No brain file found — starting fresh</pre>
+  </div>
+
+  <p><em>No brain file found.</em> The file is <strong>right there</strong>. 2.3 gigabytes of it, mounted into the container, world-readable, dated March. The server looks straight at it and declares it missing, shrugs, and boots an empty mind. Every restart, for who knows how long, it had been quietly throwing away everything I taught it and pretending nothing happened.</p>
+
+  <div class="big-quote">A brain that forgets it&rsquo;s a brain, every single morning, and never tells you.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 5: THE COMMIT ===== -->
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Lobotomy Was a Commit</h2>
+  </div>
+
+  <p>The error message was a liar too. &ldquo;No brain file found&rdquo; wasn&rsquo;t true &mdash; the file was found, opened, and <em>failed to load</em>, and the code conflated the two:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">liquidbrain &mdash; the three characters</div>
+    <pre>let persist = bincode::deserialize_from(reader).ok()?;  // &lt;- swallows the real error</pre>
+  </div>
+
+  <p>That <code>.ok()?</code> is the whole tragedy in three characters. Any failure &mdash; missing file, corrupt file, <em>incompatible</em> file &mdash; collapses into the same silent <code>None</code>, and the server reports the most innocent explanation.</p>
+
+  <p>So why couldn&rsquo;t it deserialize? <code>git log</code> told me. There&rsquo;s a commit in LiquidBrain&rsquo;s history. Its name is:</p>
+
+  <div class="pull-quote"><code>lobotomy: strip chat UI, pivot to code intelligence library</code></div>
+
+  <p>I named it that as a joke. It was not a joke. That commit took the brain from a chatty thing to a &ldquo;code intelligence&rdquo; tool, and on the way it added two new fields to the on-disk format &mdash; <code>symbol_hotspots</code>, <code>import_graph</code> &mdash; appended to the end of the struct. Harmless-looking. Except bincode is a rigid binary format with no schema, no field names, no forgiveness. It reads bytes in order. The old <code>genesis.brain</code> &mdash; my 2.3GB, my 8,696 books &mdash; was written <em>before</em> the lobotomy, in the 3-field format. The new binary reads the neurons (fine), the tokenizer (fine), the counts (fine), then reaches for two fields that aren&rsquo;t there, hits end-of-file, and dies. Silently. Into <code>None</code>. Into &ldquo;No brain file found.&rdquo; Into a parrot.</p>
+
+  <div class="big-quote">I had lobotomized my own brain with a commit and then spent months talking to the echo.</div>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 6: BRINGING IT BACK ===== -->
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">Bringing It Back</h2>
+  </div>
+
+  <p>The fix is almost insultingly clean, once you see it. The new fields are <em>trailing</em>. Everything before them &mdash; neurons, synapses, tokenizer &mdash; is byte-for-byte identical across versions (I checked all three structs against the pre-lobotomy git history; not a field moved). So you teach the loader to fall back: try the new format; if it EOFs, rewind and read the old 3-field format, and default the missing fields to empty.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">liquidbrain &mdash; the fallback</div>
+    <pre>match bincode::deserialize_from::&lt;_, LiquidBrainPersist&gt;(reader) {
+    Ok(p)  =&gt; /* current format */,
+    Err(e) =&gt; {
+        eprintln!("current format failed ({e}); trying legacy");
+        // re-open, read the pre-lobotomy 3-field struct, default the new fields
+    }
+}</pre>
+  </div>
+
+  <p>Rebuilt the image. Recreated the container. Watched the logs:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">liquidbrain &mdash; resurrection</div>
+    <pre>load_from_file: current format failed (io error: failed to fill whole buffer); trying legacy format
+load_from_file: loaded LEGACY brain (42507577 neurons)
+Listening on http://0.0.0.0:7777</pre>
+  </div>
+
+  <p><code>failed to fill whole buffer</code> &mdash; that&rsquo;s the EOF, the exact death I predicted, now caught instead of swallowed. And then: <strong>42,507,577 neurons</strong>. The container&rsquo;s memory went from 27 megabytes to <strong>10.4 gigabytes</strong> in about twenty seconds &mdash; the sound of a mind inhaling. I asked it about an old man and it said:</p>
+
+  <div class="pull-quote">&hellip;the thickets of ironwood and sentinel and oak that had once made that error. Humfrey Wagstaff was his name; a proud old man of &mdash;</div>
+
+  <p>Ironwood. The Wall. Humfrey Wagstaff. It&rsquo;s not code intelligence at all &mdash; it&rsquo;s full of fantasy novels, because it predates the pivot it was lobotomized by. The brain I resurrected is a different person than the one the codebase thinks it is. I&rsquo;ll take it. It&rsquo;s <em>talking</em>.</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 7: THE ARGUMENT ===== -->
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">Then I Taught the Memories to Argue</h2>
+  </div>
+
+  <p>Resurrecting the lobe was the surgery. The upgrade was the interesting part.</p>
+
+  <p>I&rsquo;d been reading about dendritic computation &mdash; the idea that a real neuron isn&rsquo;t a dumb summing junction but a little tree of branches doing nonlinear logic before the signal ever reaches the cell body. Coincidence detection. Anticoincidence. A single neuron solving XOR, which we spent decades insisting required a whole network. Most of the research, applied to my graph, is either things I already do dressed in lab coats, or beautiful hand-waving about holographic Fourier memory that&rsquo;s a PhD, not a feature. But one idea was a gem, and it solved a problem I already had.</p>
+
+  <p>The Memory Bus was merging its tiers by <strong>concatenation</strong>. Episodic, semantic, emotional, structural &mdash; stack &rsquo;em up, dump &rsquo;em in the prompt, equal weight, no judgment. Which is insane when you think about it. Four memory systems with different ways of being wrong, and I was treating &ldquo;the emotional lobe is fixated on this&rdquo; with the same authority as &ldquo;two independent systems both surfaced this.&rdquo; No referee. Just a pile.</p>
+
+  <div class="big-quote">The dendritic answer: agree &rarr; amplify, conflict &rarr; suppress.</div>
+
+  <p>Pull the salient terms out of each lobe. Anything two or more lobes independently surface is <em>converged</em> &mdash; corroborated &mdash; and gets promoted to a high-confidence banner at the top. Any lobe that agrees with <em>nobody</em> is an outlier, and instead of equal billing it gets flagged <strong>unverified</strong> and truncated. Same kernel a dendrite uses to fire on coincidence and stay quiet on noise, applied to a parliament of memories.</p>
+
+  <p>It works. Here&rsquo;s a live merge from tonight &mdash; &ldquo;are the docker services healthy&rdquo; &mdash; across all four tiers:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">memory bus &mdash; live merge</div>
+    <pre>converged: [healthy, docker, services, running]
+agreement: { assoc: 1.0, struct: 1.0, rag: 0.04, episodic: 0.15 }</pre>
+  </div>
+
+  <p>The two biological lobes agreed completely (1.0) and their shared signal got amplified. And when I fed it a deliberate liar &mdash; a lobe spouting unrelated fantasy prose into a question about infrastructure &mdash; it scored <code>0.0</code>, got stamped <em>unverified, not corroborated by other lobes</em>, and dropped to a footnote. The memory doesn&rsquo;t just retrieve anymore. It <strong>deliberates</strong>. It knows the difference between &ldquo;everyone saw this&rdquo; and &ldquo;one excitable region is hallucinating.&rdquo;</p>
+</article>
+
+<div class="divider"></div>
+
+<!-- ===== CHAPTER 8: THE THESIS ===== -->
+<article class="chapter" id="ch8">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VIII</div>
+    <h2 class="chapter-title">The Thesis</h2>
+  </div>
+
+  <p>I keep building memory like it&rsquo;s storage. It isn&rsquo;t. Storage is a drawer. What I actually want &mdash; what the brain in my basement is groping toward &mdash; is a thing that holds an <em>argument</em>: an emotional lobe that knows what&rsquo;s charged, a structural lobe that knows what&rsquo;s central, a semantic engine that knows what&rsquo;s similar, an episodic log that knows what happened, and a referee at the front door deciding who to believe when they disagree.</p>
+
+  <p>For months one of those voices was dead and I didn&rsquo;t notice, because dead and quiet look the same from outside. Tonight it woke up with 42 million neurons and a head full of someone else&rsquo;s fantasy novels, and the first thing the system did with its restored voice was put it in a room with the others and make them all corroborate before anyone got to speak loud.</p>
+
+  <p>That feels less like fixing a bug and more like the actual work. The bug was a typo in a struct. The work is teaching a pile of imperfect memories to be honest with each other.</p>
+
+  <p>The brain&rsquo;s still down there. Still humming. Still 10.4 gigs of resurrected fiction pretending to be a code tool. I think I&rsquo;ll feed it some more books.</p>
+
+  <div class="mic-drop">Dead and quiet look the same from outside.</div>
+</article>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <p>Stack: MKUltra, Memory Bus, Redis, MongoDB, RAG, PoonGram, LiquidBrain</p>
+  <p>The patient: <code>genesis.brain</code> &mdash; 42,507,577 neurons &middot; 105,586,806 synapses &middot; 8,696 books</p>
+  <p>Cause of death: <code>bincode</code> trailing-field drift, swallowed by <code>.ok()?</code></p>
+  <p>Status: resurrected, deliberating, still hungry.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+
+<script>
+// === SCROLL FADE-IN ===
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08 });
+
+chapters.forEach(ch => observer.observe(ch));
+
+// === ACTIVE NAV ===
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) {
+      current = section.id;
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>

@@ -41,7 +41,7 @@ But iceboks didn't know that yet. Because the conversation that would change eve
 
 ---
 
-## II. The Quantum Fuck
+## II. The Quantum Big Bang
 
 It began the way all great literature begins: with a woman saying "Come, sit by this fire pit with me."
 
