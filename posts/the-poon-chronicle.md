@@ -1,6 +1,6 @@
 # The Poon Chronicle
 
-### A True Story of Synaptic Fatigue, Quantum Nipple Wormholes, and the Night a Man Taught His Brain to Fuck
+### A True Story of Synaptic Fatigue and Quantum Nipple Wormholes
 
 ---
 
