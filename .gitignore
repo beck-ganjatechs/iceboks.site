@@ -1,1 +1,10 @@
 .playwright-mcp/
+
+# Internal notes — never publish
+kd.md
+
+# Working files & generated output
+scratch/
+logs_audio.txt
+__pycache__/
+*.pyc
