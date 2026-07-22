@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consensus, Nuance, Outliers — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #60a5fa;
+    --green-light: #93c5fd;
+    --green-dim: #1e40af;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(96, 165, 250, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(96, 165, 250, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(96, 165, 250, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(96, 165, 250, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(96, 165, 250, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(96, 165, 250, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(96, 165, 250, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(96, 165, 250, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(96, 165, 250, 0.04);
+    border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(96, 165, 250, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(96, 165, 250, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(96, 165, 250, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Brief</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">Seventy</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Machine</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">The Fallback</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Squatters</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">Rate Limits</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">Tri-Tier Honesty</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Brief</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. Seventy</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. The Machine</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. The Fallback</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Squatters</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. Rate Limits</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. Tri-Tier Honesty</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-title">Consensus,<br>Nuance,<br>Outliers</div>
+  <div class="hero-subtitle">Building a spec-first research engine that reads 120 papers, argues with itself in three tiers, and tells you when it only found 70</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Brief</h2>
+  </div>
+
+  <p>Most of my projects start with a feeling and end with a repo. This one started with a document I wasn&rsquo;t allowed to edit.</p>
+
+  <p><code>instructions.md</code> &mdash; the original brief for ScholarSync, frozen on purpose. Scrape academic papers across three sources. Run a Map-Reduce analysis that splits findings into <strong>Consensus</strong>, <strong>Nuance</strong>, and <strong>Outliers</strong>. Let a human chat with the corpus. Draw the semantic clusters. Render a report a person would actually read.</p>
+
+  <p>Then I did something I normally skip: I built it spec-first, with GitHub&rsquo;s Spec-Kit, which forces you to write a <em>constitution</em> before you write a function. Seven binding principles. Async-first. Library-first decomposition. Type safety end to end. Modularity by service boundary. Observability. Spec-driven evolution.</p>
+
+  <p>And principle number six, which is the reason this post exists:</p>
+
+  <div class="pull-quote">VI. Tri-Tier Honesty.</div>
+
+  <p>Write that down before you write the scraper and it changes what you&rsquo;re allowed to ship. I did not fully understand what I&rsquo;d signed until the thing ran.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">Seventy</h2>
+  </div>
+
+  <p>The design says 120 papers. Forty from Semantic Scholar, forty from ArXiv, forty from Crossref. Three sources so no single index gets to decide what the literature says.</p>
+
+  <p>First real smoke test, the corpus came back at <strong>70</strong>.</p>
+
+  <p>ArXiv gave me 40. Crossref gave me 40. Semantic Scholar gave me nothing at all &mdash; anonymous tier, <code>429</code>, rate limited into silence.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">smoke &mdash; /search</div>
+    <pre>healthz: ok
+corpus:  70   (40 arxiv + 40 crossref)
+s2:      0    (429 — anon tier rate limit)</pre>
+  </div>
+
+  <p>There are two things you can do here. You can quietly relabel the feature &ldquo;up to 120 papers&rdquo; and let the marketing carry the shortfall. Or you can write down that a third of your evidence base didn&rsquo;t show up, put the number on the health endpoint, and let the user decide whether a 70-paper consensus is worth anything.</p>
+
+  <p>I&rsquo;d already signed the constitution. The corpus count ships as a fact, not a target.</p>
+
+  <div class="big-quote">A research tool that hides its own sample size is not a research tool. It&rsquo;s a confidence generator.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">The Machine</h2>
+  </div>
+
+  <p>The pipeline is Map-Reduce with opinions.</p>
+
+  <p><strong>Map:</strong> every paper gets summarized independently. No cross-talk. Each one gets read on its own terms so a loud abstract can&rsquo;t colour its neighbours.</p>
+
+  <p><strong>Reduce, three ways.</strong> This is the part I actually care about. Instead of collapsing seventy summaries into one authoritative paragraph &mdash; the thing every &ldquo;AI research assistant&rdquo; does, and the thing that quietly launders disagreement into false confidence &mdash; the reducer runs three separate passes over the same evidence:</p>
+
+  <ul class="opt-list">
+    <li><strong>Consensus</strong> &mdash; what does the corpus broadly agree on?</li>
+    <li><strong>Nuance</strong> &mdash; where does it agree with caveats, conditions, contested mechanisms?</li>
+    <li><strong>Outliers</strong> &mdash; which papers disagree with the pack, and are they cranks or early?</li>
+  </ul>
+
+  <p>Outliers get detected structurally, not vibes-based, and they come back with paper IDs attached so you can go read the dissent yourself.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">app/analysis/pipeline.py</div>
+    <pre>await _emit("reduce.consensus", 0.55, "synthesising consensus")
+consensus = await reduce_consensus(reduce_llm, summaries)
+
+await _emit("reduce.nuance",    0.65, "synthesising nuance")
+nuance    = await reduce_nuance(reduce_llm, summaries)
+
+await _emit("outliers",         0.78, "detecting outliers")
+outliers  = await detect_outliers(...)</pre>
+  </div>
+
+  <p>The whole thing streams progress events as it goes, because a ninety-second silent spinner is how you teach a user that your software is broken.</p>
+
+  <p>Then <code>projection.py</code> drops the corpus into 2D so D3 can draw it as a cluster map. Seventy papers as a constellation instead of a list. You find the lonely dot on the edge and that&rsquo;s usually where the interesting argument is.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">The Fallback</h2>
+  </div>
+
+  <p>Default LLM provider: <strong>LiquidBrain</strong>, my own thing, port 7778.</p>
+
+  <p>At bootstrap, LiquidBrain was not listening. (Regular readers will recall what was wrong with LiquidBrain around this era. It was busy being a parrot.)</p>
+
+  <p>So the provider abstraction did its job: probe failed, connection refused, fall through to Ollama on 11434, keep going. And then &mdash; the part that matters &mdash; it <em>said so</em>:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">/healthz</div>
+    <pre>llm_provider: "ollama (fallback)"</pre>
+  </div>
+
+  <p>Not <code>"ollama"</code>. Not a silent swap. The health endpoint tells you the primary died and you&rsquo;re running on the understudy.</p>
+
+  <p>Every silent fallback I&rsquo;ve ever written has eventually cost me a week. A system that degrades gracefully and doesn&rsquo;t mention it isn&rsquo;t resilient &mdash; it&rsquo;s just lying with extra steps.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Squatters</h2>
+  </div>
+
+  <p>Small chapter. Purely for anyone who runs too many services on one box and thinks it&rsquo;s only their problem.</p>
+
+  <p>Backend was specced for <code>:8000</code>. Port taken &mdash; a nginx container from an entirely unrelated healthcare project sitting on it.</p>
+
+  <p>Frontend was specced for <code>:3000</code>. Also taken &mdash; by the MKUltra frontend.</p>
+
+  <p>ScholarSync lives on <code>:8088</code> and <code>:3088</code> because my own past projects are squatting the default ports on my own machine like pigeons on a statue.</p>
+
+  <div class="pull-quote">The tax on running everything locally is that eventually you are your own hostile infrastructure.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">Rate Limits All the Way Down</h2>
+  </div>
+
+  <p>Semantic Scholar rate-limited the scraper. Then the LLM tier started rate-limiting the analysis, because seventy map-stage summaries is seventy calls before you&rsquo;ve reduced anything.</p>
+
+  <p>Three fixes, in order of increasing shamelessness:</p>
+
+  <p><strong>Split the models by job.</strong> The map stage is bulk work &mdash; seventy cheap summarizations where quality per call barely moves the final answer. The reduce stage is where the actual thinking happens. So they got separate model configs: a cheap fast one for bulk, an opt-in heavy override for reduce. Spend your good tokens on the synthesis, not the grunt work.</p>
+
+  <p><strong>Rate-gate the provider.</strong> Requests get paced so the pipeline degrades into <em>slow</em> instead of <em>failed</em>.</p>
+
+  <p><strong>Rotate the free-tier keys.</strong> I wrote a Gemini key rotator. It is exactly what it sounds like. I&rsquo;m not going to pretend it&rsquo;s elegant &mdash; it&rsquo;s a pile of free-tier keys in a trench coat &mdash; but a research tool you can&rsquo;t afford to run is a research tool you don&rsquo;t run.</p>
+
+  <p>Every honest local-AI project has one component like this. Mine rotates API keys.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">Tri-Tier Honesty</h2>
+  </div>
+
+  <p>The reason this project matters to me isn&rsquo;t the stack. It&rsquo;s that the interesting engineering all landed in the same place: <strong>refusing to smooth things over.</strong></p>
+
+  <p>Three sources instead of one, so no index gets to be the truth. Three reduction tiers instead of one summary, so disagreement survives contact with the synthesizer. A corpus count that reports 70 when it hoped for 120. A health endpoint that admits it&rsquo;s running the backup model. Outliers that ship with IDs so you can go check whether the weirdo paper is wrong or early.</p>
+
+  <p>Every one of those is a decision to make the tool <em>less</em> impressive and more useful. And every one of them came from writing the constitution first, when I was still theoretical about my own integrity and hadn&rsquo;t yet met the demo where the number came back low.</p>
+
+  <p>That&rsquo;s the actual argument for spec-driven development, and it&rsquo;s got nothing to do with planning. You write down what you refuse to do while refusing is still free.</p>
+
+  <p>The failure mode of every AI research assistant is the same: it reads a contested literature and hands you one confident paragraph. It launders seventy arguments into a voice with no doubt in it. That&rsquo;s not synthesis. That&rsquo;s a machine for producing the feeling of having read something.</p>
+
+  <div class="mic-drop">Consensus is the easy tier. Outliers are why you built the thing.</div>
+</article>
+
+<footer class="footer">
+  <p>Stack: FastAPI &middot; Python 3.13 &middot; asyncio &middot; httpx &middot; Next.js 16 (RSC) &middot; Tailwind v4 &middot; Zustand &middot; D3 &middot; Recharts &middot; TanStack</p>
+  <p>Sources: Semantic Scholar &middot; ArXiv &middot; Crossref &mdash; Embeddings: <code>nomic-embed-text</code></p>
+  <p>LLM: LiquidBrain (default) &rarr; Ollama (fallback) &rarr; Gemini / Anthropic / OpenAI</p>
+  <p>Spec-first via GitHub Spec-Kit. Constitution v1.0.0, seven principles, one of which was load-bearing.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+
+<script>
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+  });
+}, { threshold: 0.08 });
+chapters.forEach(ch => observer.observe(ch));
+
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) { current = section.id; }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>

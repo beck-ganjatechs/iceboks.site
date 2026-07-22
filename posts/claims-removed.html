@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claims Removed Pending Real Implementation — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #a3e635;
+    --green-light: #bef264;
+    --green-dim: #3f6212;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(163, 230, 53, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(163, 230, 53, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(163, 230, 53, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(163, 230, 53, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(163, 230, 53, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(163, 230, 53, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(163, 230, 53, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(163, 230, 53, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(163, 230, 53, 0.04);
+    border-bottom: 1px solid rgba(163, 230, 53, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(163, 230, 53, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(163, 230, 53, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(163, 230, 53, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Scaffold</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">What It Claimed</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Honest Commit</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">What Was True</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Model Ladder</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">766 Megabytes</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">The Status Table</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Scaffold</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. What It Claimed</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. The Honest Commit</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. What Was True</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Model Ladder</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. 766 Megabytes</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. The Status Table</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-title">Claims Removed<br>Pending Real<br>Implementation</div>
+  <div class="hero-subtitle">I shipped an AI operating system that claimed eBPF observability, Landlock sandboxing, and a self-healing RAG log analyzer. Then I read my own README.</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Scaffold</h2>
+  </div>
+
+  <p>The commit is called <code>Initial commit: CognitiveOS v1.0.0 (Alpine-based AI agent OS scaffold)</code> and the most important word in it is the last one.</p>
+
+  <p>The idea was good and I still believe it: an operating system where the LLM isn&rsquo;t an app you open but a layer you administer through. Alpine base, small enough to hold in your head. A tiny model as first-contact intent router. Tool calling wired into real system operations. Ship it as a bootable ISO so it&rsquo;s a <em>distribution</em>, not a container someone has to be talked into running.</p>
+
+  <p>I built the scaffold. It booted. It had a README.</p>
+
+  <p>And the README described a piece of software that did not exist.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">What It Claimed</h2>
+  </div>
+
+  <p>Here is what v1.0.0 told you it was, verbatim from the file I deleted:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">README.md &mdash; v1.0.0, since removed</div>
+    <pre># CognitiveOS - The Cognitive Operating System
+
+### Core Components
+- AIOS Kernel Layer: LLM-native system call interface
+- Intent Router: Sub-billion parameter models for zero-latency routing
+- Cognitive Scheduler: LLM-native cron with OpenRC timers
+- Autonomous Log Analysis: Self-healing system with RAG
+- AetherShell: Typed functional pipeline shell
+- Kernel Security: eBPF observability, Landlock, seccomp-bpf sandboxing</pre>
+  </div>
+
+  <p>Read that list as a stranger would. <em>LLM-native system call interface.</em> <em>Self-healing.</em> <em>eBPF observability, Landlock, seccomp-bpf sandboxing.</em></p>
+
+  <p>That is a research lab&rsquo;s worth of work. It&rsquo;s three security subsystems and an autonomous remediation loop, described in the confident present tense of a thing that ships.</p>
+
+  <p>What actually existed behind those bullets: no eBPF. No Landlock. No seccomp policy. The &ldquo;self-healing log analysis&rdquo; grepped logs. The &ldquo;cognitive scheduler&rdquo; was rules. &ldquo;LLM-native system call interface&rdquo; described a shell script that POSTs to Ollama.</p>
+
+  <p>Nobody lied to me. I wrote it. Every one of those bullets was a thing I intended, typed in the tense of a thing I&rsquo;d done, on a day when the difference didn&rsquo;t feel important because I was the only reader.</p>
+
+  <div class="big-quote">The gap between a roadmap and a README is one verb tense, and it is the entire difference between ambition and fraud.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">The Honest Commit</h2>
+  </div>
+
+  <p>The next commit in the log is the one I&rsquo;m proud of, and it doesn&rsquo;t add a feature:</p>
+
+  <div class="pull-quote"><code>Major refactor: honest docs, shared config library, real LLM intent router</code></div>
+
+  <p>Three things in that message, and the ordering is not accidental. <em>Honest docs</em> came first.</p>
+
+  <p>The refactor deleted the entire architecture section. Every capability that didn&rsquo;t exist got cut out of the README and moved into <code>ROADMAP.md</code>, which is where an intention is supposed to live. The security bullets didn&rsquo;t get softened or hedged into &ldquo;planned eBPF integration.&rdquo; They got removed, and the status table grew a new row that says, in plain text:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">README.md &mdash; current</div>
+    <pre>| eBPF/Landlock | ❌ Not implemented | Claims removed pending real impl |</pre>
+  </div>
+
+  <p>I want to be precise about why that row is there instead of just deleting the line and moving on. A silently removed claim is still a lie, just a covered-up one &mdash; anybody who read v1.0.0 walked away believing something false, and quietly editing the page doesn&rsquo;t reach them. Leaving a row that says <em>I claimed this, it wasn&rsquo;t true, here&rsquo;s the correction</em> is the only version that respects the reader who got there first.</p>
+
+  <p>It costs nothing but the ego, and the ego was the problem.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">What Was Actually True</h2>
+  </div>
+
+  <p>Here&rsquo;s the thing that surprised me: with the fiction cut away, what remained was still good.</p>
+
+  <p><strong>Tool calling that works.</strong> <code>ollama-cli</code> drives Ollama&rsquo;s <code>/api/chat</code> through a real function-calling loop, with actual system tools behind it &mdash; <code>file_list</code>, <code>file_read</code>, <code>proc_list</code>, <code>proc_kill</code> (with PID validation, because an LLM with an unvalidated kill is a bad afternoon), <code>service_status</code>, <code>service_restart</code>, <code>log_read</code>.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">the actual interface</div>
+    <pre>ollama-cli -m qwen3:0.6b -p "Check if nginx is running" --tools</pre>
+  </div>
+
+  <p><strong>A real intent router.</strong> LLM-based classification, local, small model, with rule-based fallback when the model is unavailable or unsure. Not &ldquo;zero-latency&rdquo; &mdash; that was marketing &mdash; but genuinely fast and genuinely LLM-driven.</p>
+
+  <p><strong>A real MCP server.</strong> Full JSON-RPC over stdio, spec-compliant: <code>initialize</code>, <code>tools/list</code>, <code>tools/call</code>. Which means the OS&rsquo;s tools are reachable by any external agent that speaks MCP, and that turned out to be the most useful thing in the repo.</p>
+
+  <p><strong>AetherShell.</strong> Typed JSON pipelines over jq. This one survived the purge intact because it was real the whole time.</p>
+
+  <p><strong>A shared config library.</strong> <code>common.sh</code>, one source of truth for config parsing, logging, and paths, used by every component. Deeply unglamorous. The second item in that commit message for a reason: the reason the docs had drifted was that every component had its own idea of the truth.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Model Ladder</h2>
+  </div>
+
+  <p>Four commits in two days, and they tell a story about small models that no benchmark will:</p>
+
+  <ul class="opt-list">
+    <li><strong>smollm2:135m</strong> &mdash; the dream. 135 million parameters doing intent classification at the speed of a function call. Too small to be reliable.</li>
+    <li><strong>qwen2.5:0.5b</strong> &mdash; &ldquo;reliable classification.&rdquo; A commit message written with relief.</li>
+    <li><strong>qwen3:0.6b</strong> &mdash; better performance <em>and</em> reliability for a hundred million more parameters.</li>
+    <li><strong>Hybrid</strong> &mdash; stop choosing. Local <code>qwen3:0.6b</code> as the micro model for fast classification, remote <code>glm.iceboks-tools</code> on the big box for anything that needs to actually think.</li>
+  </ul>
+
+  <p>That ladder is the whole practical lesson of local agentic systems. The router doesn&rsquo;t need to be smart, it needs to be <em>consistent</em> &mdash; a 135M model that&rsquo;s brilliant 70% of the time is worse than a 600M model that&rsquo;s boring every time, because an inconsistent router poisons everything downstream and you debug the wrong layer for a week.</p>
+
+  <p>And once you split micro from primary, the size question dissolves. Small model at the door. Big model in the back. The door doesn&rsquo;t need to be a philosopher.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">766 Megabytes</h2>
+  </div>
+
+  <p>The part I didn&rsquo;t expect to be the hardest: making it a <em>real</em> distribution.</p>
+
+  <p><code>cognitiveos-1.0.0-x86_64.iso</code> &mdash; 766 megabytes. Live RAM boot, so the whole system runs out of memory once it&rsquo;s up. BSPWM desktop with 18 themes, polybar, eww widgets, because an OS you don&rsquo;t want to look at is an OS you don&rsquo;t boot. And a GUI installer, so persisting it to disk is a double-click instead of a wiki page.</p>
+
+  <p>Writing an ISO forces a kind of honesty that a Docker image lets you dodge. A container inherits your machine&rsquo;s assumptions &mdash; your kernel, your network, your half-configured daemons, the seventeen things you installed once and forgot. An ISO boots on cold metal that has never met you.</p>
+
+  <div class="pull-quote">Every convenient lie you told yourself about your own environment gets audited by a machine that has never met you.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">The Status Table</h2>
+  </div>
+
+  <p>What CognitiveOS is today: eleven rows in a table. Six ✅. Two 🚧. One ❌.</p>
+
+  <p>The scheduler is still rule-based with LLM integration planned. Log analysis still greps and doesn&rsquo;t reason. eBPF and Landlock are still not there, and the row says so.</p>
+
+  <p>That table is a less exciting document than the one I deleted. It is also the only version anyone could build on, because it&rsquo;s the only version where the ✅ means something. A status table where everything is green carries no information at all &mdash; it&rsquo;s a mood board. The ❌ is what makes the ✅ legible.</p>
+
+  <p>I&rsquo;ve now hit this same wall from three directions. A memory bus whose docs said <em>Not Started</em> while hundreds of lines of it ran in production. A brain that booted empty every morning behind a green healthcheck. And an operating system whose README described its own roadmap in the past tense.</p>
+
+  <p>Same failure every time, and it&rsquo;s never the code. It&rsquo;s the distance between the description and the thing. Code drifts from its documentation the way a story drifts from an event &mdash; not by lying, but by getting told a few too many times by someone who was there.</p>
+
+  <p>The fix isn&rsquo;t discipline. It&rsquo;s making the gap <em>visible</em>: a health endpoint that names its fallback, a corpus count that reports low, a status table with an ❌ in it that you have to look at every time you open the repo.</p>
+
+  <div class="mic-drop">Write the roadmap in the future tense. It&rsquo;s the only tense you&rsquo;ve earned.</div>
+</article>
+
+<footer class="footer">
+  <p>Base: Alpine Linux &middot; Live RAM boot &middot; BSPWM + polybar + eww &middot; 18 themes &middot; GUI installer</p>
+  <p>AIOS: <code>ollama-cli</code> tool loop &middot; <code>aios-router</code> &middot; <code>aios-mcp-server.py</code> (JSON-RPC/stdio) &middot; AetherShell &middot; <code>common.sh</code></p>
+  <p>Models: <code>qwen3:0.6b</code> local micro &rarr; <code>glm.iceboks-tools</code> remote primary</p>
+  <p>ISO: <code>cognitiveos-1.0.0-x86_64.iso</code> &mdash; 766 MB. Status: 6 done, 2 partial, 1 honestly missing.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+
+<script>
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+  });
+}, { threshold: 0.08 });
+chapters.forEach(ch => observer.observe(ch));
+
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) { current = section.id; }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>

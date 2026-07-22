@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>159 Milliseconds — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #f472b6;
+    --green-light: #f9a8d4;
+    --green-dim: #9d174d;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(244, 114, 182, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(244, 114, 182, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(244, 114, 182, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(244, 114, 182, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(244, 114, 182, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(244, 114, 182, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(244, 114, 182, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(244, 114, 182, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(244, 114, 182, 0.04);
+    border-bottom: 1px solid rgba(244, 114, 182, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(244, 114, 182, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(244, 114, 182, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(244, 114, 182, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Budget</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">Three Loads</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">159 vs 1548</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">The Thumb</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">Hiding Things</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">Semantic Zoom</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">Your Eyes Tell</span><span class="dot"></span></a>
+  <a href="#ch8"><span class="nav-label">The Thesis</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Budget</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. Three Loads</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. 159 vs 1548</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. The Thumb</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. Hiding Things</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. Semantic Zoom</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. Your Eyes Tell</a>
+  <a href="#ch8" onclick="this.parentElement.classList.remove('open')">VIII. The Thesis</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-title">159<br>Milliseconds</div>
+  <div class="hero-subtitle">How long a human needs to read a donut chart on a smartwatch &mdash; and what happens to every interface you build once you take that number seriously</div>
+  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Budget Nobody Told You About</h2>
+  </div>
+
+  <p>I can add RAM to the box in the basement. I did it last month. I cannot add RAM to the person looking at the screen, and no release will ever ship that changes it.</p>
+
+  <p>That&rsquo;s the whole field in one sentence. Every other part of the stack has gotten exponentially better &mdash; storage, bandwidth, inference, the number of pixels I can push at a wrist &mdash; and the thing on the receiving end has a working memory that hasn&rsquo;t been revised since the Pleistocene and doesn&rsquo;t take patches.</p>
+
+  <p>So when you pour more data through the pipe, you&rsquo;re not scaling. You&rsquo;re overdrawing an account that belongs to somebody else.</p>
+
+  <div class="pull-quote">Every other tier in the stack is elastic. The last one is a fixed allocation with no swap.</div>
+
+  <p>And overdrawing it isn&rsquo;t abstract. It shows up as a person who missed the thing that mattered, confirmed a dialog without reading it, and closed your app annoyed without ever being able to tell you why.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">Three Kinds of Tired</h2>
+  </div>
+
+  <p>Cognitive load splits three ways, and the split is useful because only one of them is your fault.</p>
+
+  <p><strong>Intrinsic</strong> &mdash; the task is genuinely hard. Comparing mortgage rates is hard. Reading a multivariable health dashboard is hard. You can&rsquo;t design this away; you can only cut it into pieces a person can swallow one at a time.</p>
+
+  <p><strong>Germane</strong> &mdash; the effort of actually <em>learning</em> your thing. Building the mental model that makes the next visit fast. This one is an investment and you want to protect it.</p>
+
+  <p><strong>Extraneous</strong> &mdash; pure overhead you inflicted. Inconsistent labels. Six-point type. Two buttons competing to be the primary action. Nothing about this load helps anyone do anything.</p>
+
+  <p>Here&rsquo;s the part that reframed it for me. These three draw from <em>the same pool</em>. Extraneous load doesn&rsquo;t just annoy people &mdash; it <strong>starves the intrinsic task</strong>. Every milligram of attention someone spends decoding your inconsistent navigation is attention that is no longer available for the actual decision they came to make.</p>
+
+  <p>A cluttered interface doesn&rsquo;t make your product feel bad. It makes your user <em>worse at the thing they came to do</em>, and they will experience that as their own failure.</p>
+
+  <p>It gets sharper with age. Sensory and memory decline don&rsquo;t just make dense layouts harder to read &mdash; they push visual complexity past working-memory capacity faster, so the same screen that&rsquo;s merely busy at 25 is genuinely exhausting at 70.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">159 Milliseconds vs 1,548</h2>
+  </div>
+
+  <p>Now the number that made me want to write this.</p>
+
+  <p>Researchers put data visualizations on smartwatches and measured how long a human needs to make a basic comparison. Not to enjoy the chart. To extract one fact.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">time-to-comprehension, smartwatch</div>
+    <pre>donut chart        159 – 220 ms     ✅ recommended
+bar chart          245 – 300 ms     ✅ recommended
+radial bar chart  1548 – 1780 ms    ❌ not recommended</pre>
+  </div>
+
+  <p>A donut is read in about a sixth of a second. A radial bar chart &mdash; the beautiful one, the concentric arcs, the one that wins the dribbble shot and gets screenshotted into a design system &mdash; takes <strong>nearly two full seconds</strong>.</p>
+
+  <p>That&rsquo;s an order of magnitude. Same data, same screen, same person. The only variable is which geometry you picked.</p>
+
+  <p>And it collides with the other number in this literature: most smartwatch interactions are <strong>glances under five seconds</strong>. Often much less. Somebody lifts a wrist mid-stride, gets an answer, drops it.</p>
+
+  <p>So a radial bar chart doesn&rsquo;t cost 1.5 seconds. It costs a third of the entire interaction budget, spent on <em>decoding the chart</em> rather than learning anything &mdash; and that&rsquo;s if the person is standing still. Under motion, accuracy drops further, and linear encodings beat radial ones consistently, because the visual system tracks length far better than it tracks swept angle while your head is bouncing.</p>
+
+  <div class="big-quote">The radial chart isn&rsquo;t worse because it&rsquo;s ugly. It&rsquo;s worse because it makes a person do trigonometry while jogging.</div>
+
+  <p>The corollary is the finding I liked most in the whole pile: runners reading a visualization complete the task <strong>1.5 to 8 times faster</strong> than runners reading the same value as a number. Text is not the neutral baseline. Text is a chart that hasn&rsquo;t been drawn yet.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">The Thumb Has an Opinion</h2>
+  </div>
+
+  <p>Two laws, both old, both routinely ignored by people who have read them.</p>
+
+  <p><strong>Hick&rsquo;s Law:</strong> decision time grows logarithmically with the number of options. Every choice you add taxes every choice already there.</p>
+
+  <p><strong>Fitts&rsquo;s Law:</strong> effort scales with target size and distance. Which on a phone becomes a physical fact about the human hand &mdash; the <em>thumb zone</em>, the arc a thumb sweeps without regripping.</p>
+
+  <p>Elements inside natural thumb reach get about <strong>80% more interaction</strong> than elements outside it. Not 8%. Eighty.</p>
+
+  <p>Which means vertical position on a phone is not layout. It&rsquo;s a multiplier on whether anything happens at all. Put your primary action in the top-right of a 6.7-inch screen and you have built a button that requires a hand adjustment to press, and most people will simply not do it &mdash; and it will read in your analytics as low intent rather than as bad ergonomics.</p>
+
+  <p>Floor on touch targets: 44&times;44 pt on iOS, 48 dp on Android. Below that you&rsquo;re not designing compactly, you&rsquo;re manufacturing misfires and calling them user error.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Art of Hiding Things</h2>
+  </div>
+
+  <p>Progressive disclosure &mdash; Nielsen, 1995, older than most of the frameworks arguing about it &mdash; is just: show the minimum for right now, keep the rest one deliberate step away. Three flavors:</p>
+
+  <ul class="opt-list">
+    <li><strong>Sequential</strong> &mdash; cut one monstrous workflow into linear stages. Multi-step checkout. Progressive registration. Same total work, dramatically higher completion, because a person can see the end of each piece.</li>
+    <li><strong>Conditional</strong> &mdash; advanced settings stay folded until asked for. Accordions, tabs, the &ldquo;Advanced&rdquo; toggle. Novices aren&rsquo;t intimidated; experts still get depth.</li>
+    <li><strong>Contextual</strong> &mdash; surface things based on what the user already did. Search that narrows as you type. Transfer options that appear once a payee is valid.</li>
+  </ul>
+
+  <p>Notion hides its database engine until you&rsquo;ve got the confidence to want it. Airtable opens as a spreadsheet &mdash; a thing everyone already knows &mdash; and only later admits it&rsquo;s also Kanban, calendar, and timeline.</p>
+
+  <p>Then the escalation: <strong>zero-decision UX</strong>. Not fewer options &mdash; <em>fewer decisions</em>. Smart defaults that make the educated guess so the human doesn&rsquo;t spend a decision on it. Prefill the city from the postcode. Default the departure airport to where they actually are.</p>
+
+  <p>With a knife-edge attached: a wrong default costs more than no default. Auto-fill someone&rsquo;s home airport while they&rsquo;re on vacation booking a flight home and you haven&rsquo;t saved a decision, you&rsquo;ve created a bug the user has to find and undo.</p>
+
+  <p>And the boundary that separates this from the dark side: a smart default is trivially reversible and stated plainly. A pre-checked subscription box is also a &ldquo;default,&rdquo; and it&rsquo;s theft. The mechanism is identical. Only the intent differs, which is exactly why it&rsquo;s worth naming.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">Zoom That Changes What, Not How Big</h2>
+  </div>
+
+  <p>Optical zoom is affine: multiply the geometry, get bigger pixels. Zoom out on a dense network graph and you get an unreadable hairball of overlapping four-point labels.</p>
+
+  <p><strong>Semantic zoom</strong> changes the <em>kind</em> of information, not its size:</p>
+
+  <ul class="opt-list">
+    <li><strong>Macro</strong> &mdash; aggregate. Grouped bars, regional heatmaps, logical clusters. No labels, because labels are noise at this altitude.</li>
+    <li><strong>Meso</strong> &mdash; structure. Group boundaries firm up, prominent nodes take iconic form.</li>
+    <li><strong>Micro</strong> &mdash; detail. Text labels, individual points, exact values.</li>
+  </ul>
+
+  <p>The load-bearing constraint is <strong>geometric stability</strong>: once something has a position, it keeps it at every depth. That&rsquo;s what makes zoom navigation instead of teleportation. Break it and you strand the user &mdash; they zoom in expecting the thing they saw, and arrive somewhere unrecognizable.</p>
+
+  <p>It&rsquo;s real engineering, not a metaphor. Genomics tools swap a stacked distribution chart for literal nucleotide labels past a base-pair threshold. Windows&rsquo; <code>SemanticZoom</code> control binds a grouped view and an item view to one source so panning stays coherent across the jump. 3D code-city visualizers redraw building detail by camera distance so a large codebase doesn&rsquo;t render as visual static.</p>
+
+  <p>Same instinct as the tri-tier reducer I built for ScholarSync, honestly: don&rsquo;t collapse a complex structure into one view. Give it altitudes, and keep the map registered between them.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">Your Eyes Tell On You</h2>
+  </div>
+
+  <p>Here&rsquo;s the part that&rsquo;s either the best or worst news in the file, depending on your disposition.</p>
+
+  <p>Cognitive fatigue used to be measured by asking &mdash; NASA-TLX, the Mental Fatigue Scale, self-report. Now it can be measured by <em>watching</em>, with the front camera already in the phone.</p>
+
+  <p>Fatigued gaze degrades in specific, quantifiable ways. Gaze error &mdash; distance between where you&rsquo;re looking and where the target is &mdash; grows in mean, in standard deviation, and in entropy. Rested eyes track smoothly. Tired eyes deviate, saccade erratically, and blink in bursts.</p>
+
+  <p>From <strong>75-second chunks</strong> of gaze data, classifiers predict mental fatigue at up to <strong>80% accuracy</strong>, AUC 0.818&ndash;0.833 &mdash; beating task-performance metrics. Pupil diameter tracks time-on-task in real time.</p>
+
+  <p>Which means an interface can now know you&rsquo;re tired before you do, and adapt: simplify the view, drop a tier of density, make the primary action heavier when your eyes start wandering.</p>
+
+  <p>It also means an interface can know you&rsquo;re tired before you do. Same sentence. Fatigue detection is a feature when it defends attention and a weapon when it targets the exact moment your judgment thins. The literature is about the first. Nothing in the technology enforces it.</p>
+
+  <div class="pull-quote">Any signal precise enough to protect a user&rsquo;s attention is precise enough to farm it.</div>
+
+  <p>I&rsquo;d want that computation on-device, discarded after the window, and never sold. I don&rsquo;t expect that to be the default. I expect the first mainstream deployment to be an ad system that learns when you&rsquo;re too tired to say no.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch8">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VIII</div>
+    <h2 class="chapter-title">The Thesis</h2>
+  </div>
+
+  <p>Every technique here is the same move: <strong>put the work on the machine, which is elastic, instead of the human, who is not.</strong></p>
+
+  <p>Progressive disclosure moves sequencing effort out of the user&rsquo;s head into the interface. Smart defaults move decisions from the person to the system. Semantic zoom moves aggregation from the eye to the renderer. Glanceable geometry moves comparison from arithmetic to perception. Gaze telemetry moves fatigue-monitoring from self-report to sensor.</p>
+
+  <p>None of it is about making software look simple. Simple-looking software that hides state is <em>worse</em> &mdash; it just relocates the confusion to somewhere you can&rsquo;t see it. It&rsquo;s about spending a scarce, non-renewable, borrowed resource carefully.</p>
+
+  <p>I keep landing in this same place from different directions. A memory system that shouldn&rsquo;t dump four tiers into a prompt with equal weight, because a pile is not an answer. A research engine that shouldn&rsquo;t flatten seventy papers into one confident paragraph. An OS README that shouldn&rsquo;t list nine capabilities when six are real.</p>
+
+  <p>All three are the same failure as a radial bar chart: taking something the machine could have resolved, and handing it to a human as work.</p>
+
+  <p>The screen got smaller and it made the arithmetic obvious. Sixteen years of desktop monitors let us hide the cost, because there was always more room to put another panel. On a watch face there is no room, and every unnecessary element is visibly stealing from a five-second budget.</p>
+
+  <div class="mic-drop">You cannot add RAM to the user. Build like it.</div>
+</article>
+
+<footer class="footer">
+  <p>Sources: smartwatch glanceability perception studies (IEEE / CHI) &middot; cognitive load theory &middot; Nielsen 1995 on progressive disclosure &middot; smartphone gaze-tracking fatigue classification</p>
+  <p>Numbers that survived: donut 159 ms &middot; radial bar 1548 ms &middot; thumb zone +80% interaction &middot; 44 pt / 48 dp minimums &middot; gaze fatigue 80% accuracy from 75 s</p>
+  <p>You cannot upgrade the user. This is the entire constraint.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+
+<script>
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+  });
+}, { threshold: 0.08 });
+chapters.forEach(ch => observer.observe(ch));
+
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) { current = section.id; }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>
