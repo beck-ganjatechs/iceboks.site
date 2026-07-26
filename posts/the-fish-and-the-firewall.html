@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Fish and the Firewall — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #d4a017;
+    --green-light: #e8c35a;
+    --green-dim: #7a5c0d;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --cyan: #00e5ff;
+    --cyan-dim: #006677;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(244, 114, 182, 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(244, 114, 182, 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(244, 114, 182, 0.2); }
+    50% { text-shadow: 0 0 120px rgba(244, 114, 182, 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(244, 114, 182, 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(244, 114, 182, 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(244, 114, 182, 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(244, 114, 182, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(244, 114, 182, 0.04);
+    border-bottom: 1px solid rgba(244, 114, 182, 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(244, 114, 182, 0.2); }
+    50% { text-shadow: 0 0 60px rgba(244, 114, 182, 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(244, 114, 182, 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">Fifty-Nine Repos</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">Debate to Search</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">The Useless Draft</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">Waking the Stack</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Packet Eater</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">38 Real Questions</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">Evolution</span><span class="dot"></span></a>
+  <a href="#ch8"><span class="nav-label">The Shape</span><span class="dot"></span></a>
+  <a href="#ch9"><span class="nav-label">Postscript</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. Fifty-Nine Repos</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. Debate to Search</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. The Useless Draft</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. Waking the Stack</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Packet Eater</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. 38 Real Questions</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. Evolution</a>
+  <a href="#ch8" onclick="this.parentElement.classList.remove('open')">VIII. The Shape</a>
+  <a href="#ch9" onclick="this.parentElement.classList.remove('open')">IX. Postscript</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-title">The Fish<br>and the Firewall</div>
+  <div class="hero-subtitle">A week of borrowing ideas from a frontier lab&rsquo;s GitHub, resurrecting a 39-container stack, and letting evolution rewrite the router that was wrong a third of the time</div>
+  <div class="hero-byline">iceboks + claude &mdash; 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<main class="content">
+
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">Fifty-Nine Repos</h2>
+  </div>
+
+  <p>Sakana means fish. Sakana AI is the Tokyo lab that keeps publishing the papers I actually want to read &mdash; not another hundred-billion-parameter flex, but ideas shaped like <em>mechanisms</em>: evolution as a search operator, models teaching models, tree search over answers instead of just tokens.</p>
+
+  <p>So we crawled their entire GitHub org. Fifty-nine repositories, sorted by what would survive contact with a basement server that also has to pay the electric bill.</p>
+
+  <p>Most of it doesn&rsquo;t survive. The H100-only CUDA kernels don&rsquo;t survive. The eight-GPU reinforcement-learned teachers don&rsquo;t survive. Their shiny new multi-agent product turns out to be an API you call, not a thing you run. That&rsquo;s fine. A frontier lab&rsquo;s GitHub isn&rsquo;t a store; it&rsquo;s a quarry.</p>
+
+  <div class="pull-quote">You don&rsquo;t adopt a research lab&rsquo;s stack. You strip it for the three ideas that fit your hardware.</div>
+
+  <p>Three things fit. A tree-search library called TreeQuest, small enough to <span style="font-family:'Source Code Pro',monospace">pip install</span> and pure Python all the way down. An evolutionary program-search harness called ShinkaEvolve that speaks to local models. And a pair of hypernetworks that generate LoRA adapters in a single forward pass &mdash; parked for later, but parked deliberately, because they attack the exact reason my fine-tuning pipeline is switched off.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">The Debate Becomes a Search</h2>
+  </div>
+
+  <p>MKUltra&rsquo;s roundtable has five LLM providers on call &mdash; Claude, a local Ollama model, Gemini, Perplexity, OpenRouter. For a year, the &ldquo;heavy&rdquo; tier meant: ask all five at once, let a sixth model smash the answers together. A flat debate. Democratic, expensive, and dumb in a specific way &mdash; it spends the same effort on every provider regardless of who&rsquo;s actually good at the question.</p>
+
+  <p>Sakana&rsquo;s AB-MCTS fixes the dumbness with a bandit. Every answer becomes a node in a tree. At each step the algorithm decides: go <em>wide</em> (draft a fresh answer) or go <em>deep</em> (refine the current best) &mdash; and with <em>which</em> provider. Providers that score well get called more. Providers that time out get learned around.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">roundtable /query, budget=heavy, after</div>
+    <pre>"search": {
+  "algorithm": "ab-mcts-a",
+  "expansions": 6,
+  "best_agent": "Ollama-Heavy",
+  "best_score": 0.9,
+  "best_depth": 1,
+  "action_counts": { "Perplexity": 2, "Router": 2,
+                     "Groq-Fast": 1, "Ollama-Heavy": 1 }
+}</pre>
+  </div>
+
+  <p>Depth one. That&rsquo;s the detail I care about: the winning answer wasn&rsquo;t anyone&rsquo;s first draft. It was a refinement of a draft, produced by a different model than the one that drafted it. The second live run went the other way &mdash; one provider nailed it immediately and the bandit just exploited him three times in a row. Same code, different search, per question. That&rsquo;s the point.</p>
+
+  <p>Wiring it in took an evening, because the library asks almost nothing of you: a function that returns an answer and a score. The scores come from a judge model we already had. The whole thing degrades gracefully &mdash; if the search dies, the old flat gaggle catches the query.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">&ldquo;The Draft You Provided Isn&rsquo;t an Answer&rdquo;</h2>
+  </div>
+
+  <p>First live query through the new search, and the winning answer &mdash; the one scored 0.9 by the judge, the one selected as best from the whole tree &mdash; opened like this:</p>
+
+  <div class="big-quote">&ldquo;The draft you provided isn&rsquo;t an answer; it&rsquo;s a 401 error. Useless.&rdquo;</div>
+
+  <p>Two bugs in one sentence, and I&rsquo;m grateful for both, because they only show up when you run the thing for real.</p>
+
+  <p>Bug one: a provider had returned a 401 &mdash; an auth failure &mdash; and the search treated that error string as a legitimate node. Scored zero, sure. But zero doesn&rsquo;t mean <em>forbidden</em>, and the bandit, exploring, picked the error as a parent and asked another model to <em>improve it</em>. The model did its best. Its best was a critique of an HTTP status code.</p>
+
+  <p>Bug two: the refiner was told, in writing, &ldquo;do not mention the draft.&rdquo; It mentioned the draft in its first breath &mdash; and the judge <em>didn&rsquo;t care</em>, because nothing in the judge&rsquo;s rubric said internal process leaking into a user-facing answer should cost points.</p>
+
+  <p>Three fixes: error nodes can no longer be refinement parents; the judge now explicitly punishes meta-commentary; and the final answer is synthesized from the top scored candidates instead of shipped raw. Second live run: clean, forty-seven seconds, no archaeology of the search process visible in the output.</p>
+
+  <p>The general lesson costs nothing to state and everything to remember: a scoring function is a contract, and anything you didn&rsquo;t write into it is legal.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">Waking the Whole Stack</h2>
+  </div>
+
+  <p>MKUltra had been running a five-service skeleton crew all month to save RAM. Time to wake everything. <span style="font-family:'Source Code Pro',monospace">docker compose up -d</span>, thirty-nine services, what could go wrong.</p>
+
+  <p>What went wrong, in order: a TTS container&rsquo;s bind mount pointed at a file that no longer existed, so Docker had helpfully created an empty <em>directory</em> with the file&rsquo;s name, and you cannot mount a directory onto a file, so the container died &mdash; and its death aborted the launch sequence with seventeen services still sitting in Created, never started. The prompt optimizer was crash-looping because someone (me) had added Prometheus metrics to its code without adding the client library to its image. And the voice pipeline couldn&rsquo;t bind port 8080 because a completely unrelated side project had been squatting the port from a forgotten terminal tab for three days.</p>
+
+  <div class="pull-quote">A cold start is an audit you didn&rsquo;t schedule. Every latent failure you&rsquo;ve deployed since the last one is waiting in line.</div>
+
+  <p>Each fix was small. A profile gate on the doomed container. One word added to a Dockerfile. One SIGTERM to the port squatter. But none of them were <em>discoverable</em> until the stack actually had to stand up from zero &mdash; which it hadn&rsquo;t done in weeks. Restart-from-nothing is a test, and like all tests, it only has value if you occasionally run it.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Rule That Ate My Packets</h2>
+  </div>
+
+  <p>One service stayed broken after all that: Grafana. Healthy container, correct config, answering perfectly on localhost inside its own namespace &mdash; and every request through its nginx proxy died waiting. The nginx logs filled with 499s: <em>client gave up before upstream replied</em>. Upstream never replied.</p>
+
+  <p>The debugging had the exact shape I&rsquo;ve learned to distrust: every individual component is fine, only a specific <em>pair</em> is broken. Host to Grafana: fine. Container to Prometheus: fine. Container to Grafana: silence. Ping between them: fine. TCP between them: black hole. ICMP passing while TCP dies isn&rsquo;t a service problem. That&rsquo;s a firewall with an opinion about ports.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">iptables -L DOCKER-USER</div>
+    <pre>RETURN  tcp  10.0.0.0/24       multiport dports 3000,8880
+RETURN  tcp  192.168.192.0/24  multiport dports 3000,8880
+DROP    tcp  0.0.0.0/0         multiport dports 3000,8880</pre>
+  </div>
+
+  <p>Months ago, some session hardened two published ports so only the LAN could reach them. Reasonable. But bridge traffic on a Docker host traverses that same chain, and the containers live on 172.30.0.0/16, which is not the LAN, so the rule wrote them out too. Grafana listens on port 3000 <em>inside</em> the network. Every SYN from its own proxy, silently dropped, since whenever that rule was written.</p>
+
+  <p>One inserted exemption for the container subnet and Grafana answered in green. The villain of this post isn&rsquo;t the rule &mdash; the rule was doing exactly what it said. The villain is <em>silently</em>. A DROP leaves no log, no reset, no error. Just a proxy waiting politely forever for a packet that was executed at the border.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">Thirty-Eight Real Questions</h2>
+  </div>
+
+  <p>Now the main event. MKUltra&rsquo;s ingress router is a pile of hand-tuned regexes that reads every incoming question and decides: is this <em>code</em>, <em>strategy</em>, <em>research</em>, <em>data analysis</em>, a <em>domain specialist</em> question, or just <em>general</em>? That one decision picks which agents wake up and how much the query costs. It is the most consequential hundred lines in the stack, and nobody had ever measured it.</p>
+
+  <p>To measure it you need labeled questions. I have 5,241 logged interactions! I have, it turns out, <strong>thirty-eight distinct questions</strong> &mdash; the other 5,203 are four cron jobs asking the same four things on a loop, forever. My corpus wasn&rsquo;t a corpus. It was a heartbeat monitor with delusions of grandeur.</p>
+
+  <p>So we built the eval set instead of mining it: 324 synthetic questions generated label-first &mdash; fifty-four per intent class, mixed homelab-flavored and general, with deliberate borderline cases &mdash; plus the thirty-eight real survivors, labeled after the fact. Three hundred sixty-two total. A third sealed away as a test set the optimizer never gets to see.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">production router vs. labeled traffic</div>
+    <pre>macro-F1     0.709
+accuracy     69.3%
+
+worst class:  general — precision 0.43
+              (the dumping ground: weak signal ⟶ full
+               five-agent gaggle ⟶ the expensive mistake)</pre>
+  </div>
+
+  <p>Wrong on almost one query in three. And wrong in the costly direction: when the regexes shrug, the query falls through to &ldquo;general,&rdquo; which spins up <em>everything</em>. The cheapest classifier in the stack was quietly making the most expensive mistake in it.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">Evolution, While I Sleep</h2>
+  </div>
+
+  <p>Here&rsquo;s where the second Sakana idea comes in. ShinkaEvolve is evolutionary program search: keep a population of programs, use LLMs as mutation operators, evaluate every mutant, let the archive breed. Point it at the router, fitness = macro-F1 on the training split, and let it rewrite the regexes all night.</p>
+
+  <p>The part I want to defend is the shape of the setup, because the shape is why this is possible on a basement box at all. The mutation models are free-tier API calls and a 4.7-gigabyte local coder model. The evaluator is pure Python &mdash; twenty milliseconds per candidate, no GPU in the loop. The whole thing is a <em>batch job</em>: it runs, it writes its archive, it exits. No resident service, no idle VRAM, no monthly tax. My fine-tuning flywheel is switched off precisely because it&rsquo;s the opposite shape &mdash; a training run that starves every co-hosted service while it lives.</p>
+
+  <div class="pull-quote">Self-improvement you can afford is self-improvement shaped like a cron job, not like a tenant.</div>
+
+  <p>It&rsquo;s running as I write this. Sixty generations, two islands, a five-dollar cost ceiling it will never reach. A few hours in, the best mutant has clawed from 0.709 to 0.714 &mdash; not a headline, but the archive is young and evolution is a compounding creature. The rule for what happens after is already written down, which is the only time it&rsquo;s safe to write such rules: the winner gets scored once against the sealed test set, and it replaces the production router only if it beats 0.709 there. Not on the split it trained on. On the one it never saw.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch8">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VIII</div>
+    <h2 class="chapter-title">The Shape of It</h2>
+  </div>
+
+  <p>The week compresses to three moves.</p>
+
+  <p><strong>Borrow mechanisms, not scale.</strong> Everything worth taking from fifty-nine frontier-lab repos fit in a pip install and a git clone. The ideas &mdash; bandit-guided answer trees, LLMs as mutation operators &mdash; transfer completely. The compute assumptions don&rsquo;t have to.</p>
+
+  <p><strong>Trust nothing you haven&rsquo;t cold-started.</strong> The stack&rsquo;s five latent failures &mdash; the ghost mount, the missing import, the squatted port, the packet-eating firewall rule &mdash; were all deployed weeks before they detonated, and all invisible until everything had to stand up from zero at once.</p>
+
+  <p><strong>Measure before you optimize, seal the test set, and let the machine grind.</strong> The router was &ldquo;fine&rdquo; for a year because nobody looked. One afternoon of building an honest eval set turned <em>fine</em> into <em>0.709</em>, and 0.709 into a number that evolution is, at this very moment, trying to beat while I do something else entirely.</p>
+
+  <p>The fish gave us the ideas. The firewall gave us the humility. The overnight run gave us the ending &mdash; it&rsquo;s in the postscript.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch9">
+  <div class="chapter-header">
+    <div class="chapter-number">Postscript</div>
+    <h2 class="chapter-title">The Number</h2>
+  </div>
+
+  <p>The run finished the same day this post was drafted: ten and a half hours, fifty-four programs, two islands, and a five-dollar cost ceiling it never came close to touching.</p>
+
+  <div class="code-block">
+    <div class="code-block-header">sealed test set &mdash; 105 questions evolution never saw</div>
+    <pre>production router   macro-F1 0.680    accuracy 66.7%
+evolved router      macro-F1 0.708    accuracy 69.5%   ✅ promoted</pre>
+  </div>
+
+  <p>The training gain generalized. And when I diffed the winner against the original, there was no genius in it &mdash; no exotic algorithm, no memorized answers. Evolution found <em>diligence</em>: strong code verbs like <em>implement</em> and <em>refactor</em> now count double, the domain-specialist multiplier crept from 1.2 to 1.4 with extra weight on healthcare and security vocabulary, research confidence went from 3.0 to 3.5. Weights nobody ever bothered to tune, because tuning them by hand would have required the eval set nobody had built.</p>
+
+  <p>Promotion was the boring kind of careful: grafted into the production router, parity-checked at zero mismatches across all 105 test questions, full test suite green, container restarted, live probes correct. The pre-evolution router sleeps in a backup file, unmourned.</p>
+
+  <p>The router that was wrong a third of the time is still wrong three times in ten. But it got measurably better overnight, unattended, for approximately nothing &mdash; and the harness that did it is sitting in a directory, reusable, pointed at nothing yet. That last part is the good part.</p>
+</article>
+
+<footer class="footer">
+  <p>Sources: SakanaAI/treequest (AB-MCTS) &middot; SakanaAI/ShinkaEvolve &middot; one iptables chain that will never be trusted again</p>
+  <p>Numbers that survived: 59 repos &middot; 39 containers &middot; 5,241 interactions, 38 distinct &middot; general precision 0.43 &middot; 54 programs in 10.5 hours &middot; sealed test 0.680 &rarr; 0.708 &middot; promoted</p>
+  <p>A scoring function is a contract. Anything you didn&rsquo;t write into it is legal.</p>
+</footer>
+
+</main>
+
+<script src="../site.assets/synapse-bg.js"></script>
+
+<script>
+const chapters = document.querySelectorAll('.chapter');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); }
+  });
+}, { threshold: 0.08 });
+chapters.forEach(ch => observer.observe(ch));
+
+const navLinks = document.querySelectorAll('.chapter-nav a, .mobile-nav a');
+const sections = document.querySelectorAll('.chapter, .hero');
+function updateNav() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.4) { current = section.id; }
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+</script>
+
+</body>
+</html>
