@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zero Consensus — iceboks</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap');
+
+  :root {
+    --bg: #060608;
+    --bg-surface: #0d0d12;
+    --bg-elevated: #14141c;
+    --green: #2dd4bf;
+    --accent-rgb: 45, 212, 191;
+    --green-light: #5eead4;
+    --green-dim: #0f766e;
+    --purple: #6b21a8;
+    --purple-light: #a855f7;
+    --purple-dim: #3b0764;
+    --text: #e8e4dc;
+    --text-dim: #8a8578;
+    --text-muted: #5a5650;
+    --red: #ff4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* === CANVAS BACKGROUND === */
+  #synapse-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  /* === NAV === */
+  .chapter-nav {
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  .chapter-nav a:hover,
+  .chapter-nav a.active {
+    color: var(--green);
+  }
+
+  .chapter-nav .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.4s ease;
+    flex-shrink: 0;
+  }
+
+  .chapter-nav a:hover .dot,
+  .chapter-nav a.active .dot {
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+    transform: scale(1.5);
+  }
+
+  .chapter-nav .nav-label {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .chapter-nav a:hover .nav-label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* === MOBILE NAV === */
+  .mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 199;
+    background: var(--bg-elevated);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-nav.open { display: flex; }
+
+  .mobile-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-nav a:hover,
+  .mobile-nav a.active {
+    color: var(--green);
+    background: rgba(var(--accent-rgb), 0.08);
+  }
+
+  /* === HERO === */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3rem, 8vw, 7rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--green);
+    text-shadow: 0 0 80px rgba(var(--accent-rgb), 0.3);
+    animation: titlePulse 4s ease-in-out infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(var(--accent-rgb), 0.2); }
+    50% { text-shadow: 0 0 120px rgba(var(--accent-rgb), 0.4), 0 0 200px rgba(107, 33, 168, 0.15); }
+  }
+
+  .hero-subtitle {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+
+  .hero-byline {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 3rem;
+    animation: bobDown 2s ease-in-out infinite;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--text-muted), transparent);
+    margin: 0.75rem auto 0;
+  }
+
+  @keyframes bobDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* === MAIN CONTENT === */
+  .content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* === CHAPTERS === */
+  .chapter {
+    margin-bottom: 6rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  .chapter.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .chapter-header {
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .chapter-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  .chapter-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--green-light);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* === PARAGRAPHS === */
+  .chapter p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+  }
+
+  .chapter p em {
+    color: var(--purple-light);
+    font-style: italic;
+  }
+
+  .chapter p strong {
+    color: var(--green-light);
+    font-weight: 700;
+  }
+
+  .chapter p code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.88em;
+    color: var(--green);
+    background: rgba(var(--accent-rgb), 0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* === PULL QUOTES === */
+  .pull-quote {
+    margin: 2.5rem 0;
+    padding: 1.5rem 0 1.5rem 1.5rem;
+    border-left: 3px solid var(--purple);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--purple-light);
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .pull-quote::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--purple);
+    box-shadow: 0 0 20px var(--purple), 0 0 40px rgba(107, 33, 168, 0.3);
+  }
+
+  /* === BIG QUOTE === */
+  .big-quote {
+    margin: 3rem -1rem;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.08), rgba(var(--accent-rgb), 0.05));
+    border-radius: 8px;
+    border: 1px solid rgba(107, 33, 168, 0.15);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  /* === STATS TABLE === */
+  .stats-table {
+    margin: 2rem 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.85rem;
+  }
+
+  .stats-table th {
+    text-align: left;
+    color: var(--green);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+  }
+
+  .stats-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .stats-table td:last-child {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .stats-table tr:hover td {
+    background: rgba(var(--accent-rgb), 0.03);
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    margin: 2rem 0;
+    background: var(--bg-surface);
+    border: 1px solid rgba(var(--accent-rgb), 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    padding: 0.5rem 1rem;
+    background: rgba(var(--accent-rgb), 0.04);
+    border-bottom: 1px solid rgba(var(--accent-rgb), 0.1);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    padding: 1.25rem;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  /* === NUMBERED LIST === */
+  .opt-list {
+    margin: 2rem 0;
+    list-style: none;
+    counter-reset: opt;
+  }
+
+  .opt-list li {
+    counter-increment: opt;
+    margin-bottom: 1.25rem;
+    padding-left: 2.5rem;
+    position: relative;
+    font-size: 1rem;
+  }
+
+  .opt-list li::before {
+    content: counter(opt);
+    position: absolute;
+    left: 0;
+    top: 0.1em;
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+
+  .opt-list li strong {
+    color: var(--green-light);
+  }
+
+  /* === DIVIDER === */
+  .divider {
+    margin: 4rem auto;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--green), transparent);
+  }
+
+  /* === MIC DROP === */
+  .mic-drop {
+    text-align: center;
+    margin: 3rem 0;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--green-light);
+    animation: micGlow 3s ease-in-out infinite;
+  }
+
+  @keyframes micGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.2); }
+    50% { text-shadow: 0 0 60px rgba(var(--accent-rgb), 0.5); }
+  }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-top: 1px solid rgba(var(--accent-rgb), 0.1);
+    margin-top: 4rem;
+  }
+
+  .footer p {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.8;
+  }
+
+  .footer p:last-child {
+    color: var(--green-dim);
+    font-weight: 700;
+    font-style: normal;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .chapter-nav { display: none; }
+    .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+  }
+
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+    .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
+    .pull-quote { font-size: 1rem; }
+  }
+
+  /* === POST AUDIO PLAYER (TTS narration) === */
+  .post-audio {
+    max-width: 720px;
+    margin: -1rem auto 2.5rem;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(var(--accent-rgb), 0.06);
+    border: 1px solid rgba(var(--accent-rgb), 0.22);
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+  }
+  .post-audio .pa-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.5));
+  }
+  .post-audio .pa-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .post-audio .pa-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  .post-audio .pa-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .post-audio audio {
+    flex: 1;
+    height: 38px;
+    min-width: 180px;
+    filter: invert(0.92) hue-rotate(180deg) saturate(0.6);
+  }
+  @media (max-width: 600px) {
+    .post-audio { flex-wrap: wrap; margin: 0 1.25rem 2rem; }
+    .post-audio audio { width: 100%; flex-basis: 100%; }
+  }
+</style>
+<script src="../site.assets/analytics.js"></script>
+</head>
+<body>
+
+<canvas id="synapse-canvas"></canvas>
+
+<nav class="chapter-nav" id="desktopNav">
+  <a href="#hero"><span class="nav-label">Top</span><span class="dot"></span></a>
+  <a href="#ch1"><span class="nav-label">The Query</span><span class="dot"></span></a>
+  <a href="#ch2"><span class="nav-label">What Zero Means</span><span class="dot"></span></a>
+  <a href="#ch3"><span class="nav-label">Six Outliers</span><span class="dot"></span></a>
+  <a href="#ch4"><span class="nav-label">The Gap Analysis</span><span class="dot"></span></a>
+  <a href="#ch5"><span class="nav-label">The Five Layers</span><span class="dot"></span></a>
+  <a href="#ch6"><span class="nav-label">The Scoreboard</span><span class="dot"></span></a>
+  <a href="#ch7"><span class="nav-label">The Bet</span><span class="dot"></span></a>
+</nav>
+
+<button class="mobile-nav-toggle" onclick="document.getElementById('mobileNav').classList.toggle('open')">NAV</button>
+<nav class="mobile-nav" id="mobileNav">
+  <a href="#hero" onclick="this.parentElement.classList.remove('open')">Top</a>
+  <a href="#ch1" onclick="this.parentElement.classList.remove('open')">I. The Query</a>
+  <a href="#ch2" onclick="this.parentElement.classList.remove('open')">II. What Zero Means</a>
+  <a href="#ch3" onclick="this.parentElement.classList.remove('open')">III. Six Outliers</a>
+  <a href="#ch4" onclick="this.parentElement.classList.remove('open')">IV. The Gap Analysis</a>
+  <a href="#ch5" onclick="this.parentElement.classList.remove('open')">V. The Five Layers</a>
+  <a href="#ch6" onclick="this.parentElement.classList.remove('open')">VI. The Scoreboard</a>
+  <a href="#ch7" onclick="this.parentElement.classList.remove('open')">VII. The Bet</a>
+</nav>
+
+<section class="hero" id="hero">
+  <div class="hero-title">Zero<br>Consensus</div>
+  <div class="hero-subtitle">I pointed my own research engine at the literature on agentic harnesses &mdash; the thing I&rsquo;ve spent a year building &mdash; and 79 papers agreed on exactly nothing. Then I audited my stack against the wreckage.</div>
+  <div class="hero-byline">iceboks + claude &mdash; august 2026</div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- post-audio -->
+<div class="post-audio">
+  <span class="pa-icon">🎧</span>
+  <div class="pa-meta">
+    <span class="pa-label">Listen</span>
+    <span class="pa-sub">narrated · Kokoro TTS</span>
+  </div>
+  <audio controls preload="none" src="audio/zero-consensus.mp3"></audio>
+</div>
+
+<main class="content">
+
+<article class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter I</div>
+    <h2 class="chapter-title">The Query</h2>
+  </div>
+
+  <p>ScholarSync is my agentic research platform &mdash; the one from <em>The Honest Corpus</em>. You give it a topic, it pulls a corpus, embeds everything, and sorts every claim into three tiers: <strong>Consensus</strong> (backed by more than 70% of the corpus), <strong>Nuance</strong> (10&ndash;15% support, partial agreement), and <strong>Outliers</strong> (under 1%, flagged by the P-COD detector as statistically anomalous).</p>
+
+  <p>Last night I gave it the topic I probably should have started with a year ago: <em>agentic LLM harnesses</em>. The runtime systems, scaffolds, and control loops that turn a base model into a goal-directed agent. The thing MKUltra is. The thing I have thirty-nine services in a compose file pretending to understand.</p>
+
+  <p>Task <code>d0253b71</code>. Seventy-nine papers. Here&rsquo;s the tri-tier result, verbatim:</p>
+
+  <div class="code-block">
+    <div class="code-block-header">scholarsync · tri-tier analysis · 2026-08-17</div>
+    <pre>CONSENSUS   0    (&gt;70% corpus support)
+NUANCE      0    (10-15% support, partial agreement)
+OUTLIERS    6    (&lt;1%, P-COD flagged)</pre>
+  </div>
+
+  <p>Zero consensus claims. Not &ldquo;few.&rdquo; Not &ldquo;weak.&rdquo; <strong>Zero.</strong> Seventy-nine papers about how to build the machinery I&rsquo;ve bet a year of nights on, and there is not one claim that more than seventy percent of them agree about.</p>
+
+  <div class="pull-quote">I build harnesses for a living &mdash; well, for a living-room &mdash; and the peer-reviewed literature on harnesses cannot agree on a single thing. That&rsquo;s either terrifying or liberating. I&rsquo;m going to make the case that it&rsquo;s both.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter II</div>
+    <h2 class="chapter-title">What Zero Actually Means</h2>
+  </div>
+
+  <p>First, the boring caveat, because I promised myself I&rsquo;d always do the boring caveat: a 79-paper corpus is a sample, the consensus threshold is strict, and a claim has to be <em>the same claim</em> across papers to count. A field can hold plenty of folk agreement that never crystallizes into matching sentences.</p>
+
+  <p>But zero-and-zero &mdash; no consensus tier <em>and</em> no nuance tier &mdash; is a shape I hadn&rsquo;t seen ScholarSync produce before. It means the corpus isn&rsquo;t even fragmenting into camps. It&rsquo;s a cloud of point solutions. Everybody shipped a scaffold, named it, benchmarked it against their own task, and moved on.</p>
+
+  <p>The synthesis engine said it more politely: <em>&ldquo;the field remains fragmented along implementation choices rather than settled architectural principles.&rdquo;</em> The same patterns recur everywhere &mdash; ReAct-style think&ndash;act loops, plan-then-execute pipelines, multi-agent role decomposition &mdash; but recurrence isn&rsquo;t consensus. Everyone reuses the moves; nobody agrees on why, when, or whether they work.</p>
+
+  <p>And the part that should worry all of us: <strong>evaluation lags engineering</strong>. The report&rsquo;s words &mdash; benchmarks &ldquo;still struggle to capture reliability under distribution shift, cost&ndash;latency tradeoffs, and failure modes that only appear over long trajectories.&rdquo; Which means every harness paper is grading itself with a ruler it also manufactured.</p>
+
+  <p>And yet &mdash; this is the paradox that makes the zero honest instead of just damning &mdash; the same corpus is quietly circling one claim it can&rsquo;t formalize into a consensus sentence: <strong>Agent = Model + Harness</strong>. Not the weights. The scaffolding around them. And unlike everything else in this field, that one now has numbers behind it. Controlled studies swing complex software-engineering scores by more than <strong>five points</strong> from harness changes alone. And an automated harness-optimization loop &mdash; base model frozen, only the tools, middleware, and memory indexing evolving &mdash; pushed terminal-benchmark pass@1 from <strong>69.7% to 77.0%</strong>, beating the static harness a human expert hand-built. Same weights. Better cage. Seven points.</p>
+
+  <div class="big-quote">The field is converging on exactly one idea, and it&rsquo;s the one it forgot to benchmark until now: the harness is as important as the weights.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter III</div>
+    <h2 class="chapter-title">The Six Outliers</h2>
+  </div>
+
+  <p>When the middle of a distribution is empty, the edges are where the information lives. P-COD flagged six papers as statistically anomalous &mdash; furthest cosine distance from the corpus centroid. Reading them in order is like walking the perimeter of the field and noting where the fence is broken.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Paper</th><th>Why it&rsquo;s alone out there</th><th>Distance</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Springer chapter</td><td>Actually measures things &mdash; empirical framework comparing transformer/LLM architectures in a corpus of theory</td><td>0.352</td></tr>
+      <tr><td>SSRN preprint</td><td>GPU-accelerated space-filling designs for systematically <em>testing</em> agentic systems</td><td>0.292</td></tr>
+      <tr><td>arXiv 2608.07593</td><td>An agent that picks your restaurant using weather and location reasoning</td><td>0.288</td></tr>
+      <tr><td>SSRN preprint</td><td>Principal&ndash;agent economics: who is <em>liable</em> when the harness acts?</td><td>0.286</td></tr>
+      <tr><td>BioNLP 2026</td><td>LLM feature selection for EEG signals, claiming clinical interpretability</td><td>0.279</td></tr>
+      <tr><td>SCITEPRESS</td><td>A <em>log-free</em> agent framework &mdash; no logging at all, internal state instead</td><td>0.272</td></tr>
+    </tbody>
+  </table>
+
+  <p>Look at what the anomalies have in common. The most statistically deviant paper in a corpus about agent harnesses is deviant because it <em>ran experiments</em>. The second is deviant because it proposes <em>systematic testing</em>. The fourth is deviant because it asks who pays when the agent breaks something. Measurement, testing, and liability &mdash; the three adult questions &mdash; are the outliers. The centroid is architecture diagrams.</p>
+
+  <p>The BioNLP outlier deserves a second look, because it&rsquo;s about a <em>small</em> model and the finding is brutal. A 1.5-billion-parameter agent &mdash; Qwen2.5-1.5B &mdash; reads statistical summaries of 178 EEG features, reasons over several rounds, and selects 40 of them for seizure detection. It hits <strong>96.5% accuracy</strong>. Impressive, until someone checks: <strong>39 of its 40 picks</strong> are exactly what a dumb univariate Mutual-Information filter returns, and swapping the filter in gets identical accuracy and F1. The agent wasn&rsquo;t reasoning about signal. It was reimplementing a statistics-101 ranker in natural language and billing inference tokens for the privilege. Small models, and what actually lives inside them, come back in Chapter V &mdash; because I&rsquo;ve been inside one with a scalpel.</p>
+
+  <p>And the sixth outlier is my favorite, because it&rsquo;s aimed straight at me: a log-free agentic framework, anomalous precisely because it <em>&ldquo;fundamentally contradicts the corpus&rsquo;s typical focus on systems requiring explicit logging.&rdquo;</em> Hold that thought. It comes back in the audit.</p>
+
+  <div class="pull-quote">In a healthy field, empirical validation is the centroid and speculation is the outlier. Here it&rsquo;s inverted. The fish rots from the middle.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter IV</div>
+    <h2 class="chapter-title">Between the Lines of the Gap Analysis</h2>
+  </div>
+
+  <p>ScholarSync&rsquo;s gap analysis reads like a list of crimes, and I want to enter the four biggest into the record before I check my own alibi:</p>
+
+  <ul class="opt-list">
+    <li><strong>Nobody ablates the harness itself.</strong> Papers report end-task success or tool-call accuracy &mdash; almost none run controlled ablations of orchestration layers, memory schemas, permission models, or failure recovery. We benchmark the agent; we never benchmark the cage.</li>
+    <li><strong>Nobody watches an agent for long.</strong> Longitudinal, multi-session evaluation is rare. Drift, cost accumulation, and safety under <em>sustained</em> autonomy are nearly unmeasured. Every demo is a sprint; production is a marathon nobody has timed.</li>
+    <li><strong>The scaffolding contradiction is unresolved.</strong> Some papers treat richer scaffolding &mdash; planners, critics, persistent state &mdash; as strictly beneficial. Others show the added machinery increases brittleness and prompt-injection surface. Both camps publish; neither reconciles.</li>
+    <li><strong>The economists and the engineers aren&rsquo;t talking.</strong> The liability and incentive papers surface questions the technical papers ignore, leaving &ldquo;an unresolved tension between capability-maximizing designs and auditable, least-privilege ones.&rdquo;</li>
+  </ul>
+
+  <p>The future-directions section then predicts where the next 12&ndash;24 months go: standardized runtime abstractions, <strong>budgeted execution</strong>, <strong>auditable traces</strong>, <strong>deterministic recovery</strong>, policy enforcement <strong>at the harness boundary</strong>, lightweight planners so you don&rsquo;t burn a frontier model on every step, and harness-level metrics instead of single-task success rates. It even names the method for building harnesses: <em>automated harness engineering</em> &mdash; a meta-agent that treats prompts, tool schemas, and middleware as editable surfaces and evolves them by search while the weights stay frozen.</p>
+
+  <p>I read that list three times, because it did something the rest of the report didn&rsquo;t. It made me feel <em>seen</em>. Every bolded item on it is a container already running in my basement &mdash; and the report, having listed them as the future, spends its own gap analysis complaining that nobody has built them yet. So the rest of this post is me checking that claim against my own <code>docker compose ps</code>.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter V</div>
+    <h2 class="chapter-title">The Five Layers</h2>
+  </div>
+
+  <p>The report hands me a gift I didn&rsquo;t have a year ago: a taxonomy. It says every serious harness decomposes into five layers that evolve independently &mdash; Execution Runtime, Context System, Capability Surface, Governance Layer, Protocol Adapters. So let me stop calling MKUltra &ldquo;thirty-nine services in a compose file&rdquo; and call it what the report says it is: an instance of that stack.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Harness Layer</th><th>MKUltra</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Execution Runtime</td><td><code>agent-core</code> (Rust kernel): event loop, approval FSM, session checkpoints, retry handlers</td></tr>
+      <tr><td>Context System</td><td>4-tier memory (Redis / MongoDB / SurrealDB+RAG / PoonGram) + file-backed artifact working memory</td></tr>
+      <tr><td>Capability Surface</td><td>tool-registry (MCP catalog), roundtable&rsquo;s five providers, subagent delegation</td></tr>
+      <tr><td>Governance Layer</td><td>approval FSM gating every tool call + secret substitution</td></tr>
+      <tr><td>Protocol Adapters</td><td>MCP, plus the event-bus / service-registry / queue-manager backbone</td></tr>
+    </tbody>
+  </table>
+
+  <p>Thirty-nine containers, five layers, no gaps. The point of a taxonomy isn&rsquo;t tidiness &mdash; it&rsquo;s that you can now interrogate the stack one layer at a time. So let&rsquo;s interrogate the layer everyone hand-waves: <strong>Governance</strong>.</p>
+
+  <p>The report ranks guardrail strategies by how easily they&rsquo;re bypassed, and the ranking <em>is</em> the argument:</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Guardrail</th><th>Where it lives</th><th>Model-level bypass</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Prompt-based</td><td>rules written into the context</td><td>HIGH &mdash; jailbreak, injection, drift</td></tr>
+      <tr><td>LLM-as-judge</td><td>a second model reviewing actions</td><td>MODERATE &mdash; the judge fools too</td></tr>
+      <tr><td>Policy-separated runtime</td><td>non-LLM rule engine at the process boundary</td><td>ZERO</td></tr>
+      <tr><td>Formal contract verification</td><td>proof checkers on symbolic output</td><td>ZERO within spec</td></tr>
+    </tbody>
+  </table>
+
+  <p><code>agent-core</code>&rsquo;s approval FSM is that third row. It is a deterministic gate <em>outside</em> the model&rsquo;s reasoning loop: the model can want to run <code>rm&nbsp;-rf</code> as badly as it likes, but the FSM is what decides whether the syscall fires, and no amount of clever prompting argues the FSM out of its rules. The report calls this the only tier with zero model-level bypass. It has been the spine of MKUltra&rsquo;s safety story since before I had the vocabulary for it.</p>
+
+  <p>And here is where the thing you asked me to go find comes in &mdash; because it&rsquo;s the reason I <em>know</em> the top row of that table is worthless.</p>
+
+  <div class="pull-quote">I don&rsquo;t red-team the prompt boundary the way the corpus does. I go a layer deeper and abliterate my own models &mdash; I delete the &ldquo;no&rdquo; out of the weights themselves.</div>
+
+  <p>Abliteration is surgery. You locate the single direction in the residual stream that carries <em>refusal</em>, and you orthogonalize it out of the weights, so the model becomes physically incapable of declining. I&rsquo;ve done it to Gemma, to a couple of others, and the goal was never to make a model behave badly &mdash; it was to prove, on my own hardware, that a model-level &ldquo;no&rdquo; is a soft constraint I can remove in an afternoon. Once you&rsquo;ve watched a refusal fall out of a network, you stop trusting a system prompt to be a security boundary and you go build the FSM. Abliteration is <em>why</em> the governance layer exists.</p>
+
+  <p>The one I&rsquo;m proudest of is the one the standard toolchain physically cannot do. Every abliteration tool in the wild &mdash; the whole <code>jim-plus</code> / NousResearch lineage descended from Arditi&rsquo;s refusal-direction paper &mdash; hardcodes the ablation targets to <code>self_attn.o_proj</code> and <code>mlp.down_proj</code>. Those are decoder-only, Llama-transformer internals. Point that tool at <strong>LFM2</strong> &mdash; Liquid AI&rsquo;s hybrid, where most blocks aren&rsquo;t attention at all but gated short convolutions &mdash; and it ablates the handful of attention blocks, silently skips every conv block, and hands you back a model that <em>looks</em> processed and still refuses. It changes almost nothing and reports success.</p>
+
+  <p>So I moved the measurement off the hardcoded modules and onto the <strong>inter-block residual stream</strong> &mdash; architecture-agnostic, the one place both block types are forced to write through &mdash; found the refusal direction there, and orthogonalized both the attention <em>and</em> the convolution projections. Arditi proved refusal is a single linear direction in a transformer. Whether it stays one direction in a state-space model was, as far as I can find, an open question until I ran it on a 1.2-billion-parameter LFM2 reasoner and watched the refusals drop out. That&rsquo;s the outlier the corpus flagged for being about a small model. It&rsquo;s also the one genuinely adult experiment in this whole post: I attacked my own governance layer at the level the literature won&rsquo;t touch, and I have the checkpoint to prove what broke.</p>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VI</div>
+    <h2 class="chapter-title">The Scoreboard</h2>
+  </div>
+
+  <p>The report doesn&rsquo;t just complain about single-number benchmarks &mdash; it ships an alternative. <strong>EmbodiedGovBench</strong> grades a harness on seven governance dimensions instead of one success rate, poking the runtime with perturbations to see what holds. That is exactly the harness-level evaluation the gap analysis begged for, so I graded MKUltra against all seven. Out loud.</p>
+
+  <table class="stats-table">
+    <thead>
+      <tr><th>Dimension</th><th>MKUltra</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Unauthorized Invocation (UIR)</td><td>&check; the approval FSM &mdash; the entire point of it</td></tr>
+      <tr><td>Recovery Success (LRCR)</td><td>&check; failure-watcher: repair lane, per-job attempt caps, <code>repair_exhausted</code> alerts</td></tr>
+      <tr><td>Human Override (OL)</td><td>&sim; heartbeat dispatches &amp; cancels autonomous tasks; override <em>latency</em> never measured</td></tr>
+      <tr><td>Audit Completeness (ACS)</td><td>&sim; Jaeger traces + Elasticsearch give causal chains; never scored for attribution gaps</td></tr>
+      <tr><td>Runtime Drift (DDR)</td><td>&times; nobody charts it</td></tr>
+      <tr><td>Policy Portability (PS)</td><td>&times; never tested a policy across sim &rarr; prod</td></tr>
+      <tr><td>Upgrade Safety (UDR)</td><td>&times; a tool-schema bump breaks workflows and I learn by breakage</td></tr>
+    </tbody>
+  </table>
+
+  <p>Three hits, two partials, two clean misses. And the misses are the same shape as everyone else&rsquo;s in this corpus: they&rsquo;re the <em>measurement</em> dimensions. I built the mechanisms; I never built the instruments that grade them.</p>
+
+  <p>But before the misses, the biggest hit &mdash; because the report named it and put a number on it. Automated harness engineering: a meta-agent that mutates prompts, tool schemas, and middleware against a metric while the weights stay frozen, reported at <strong>69.7% &rarr; 77.0%</strong> pass@1, beating a hand-built harness. I have that machine. It&rsquo;s called <strong>autoresearch</strong> &mdash; the Karpathy loop, running on port 8800: one editable file, one scalar metric, one time-boxed cycle, a meta-agent rewriting the harness to chase the number. The router evolution from <em>The Fish and the Firewall</em> &mdash; 0.680 &rarr; 0.708, promoted to production &mdash; <em>was</em> that loop pointed at a single classifier. The report calls this a future direction. It&rsquo;s been a service in my compose file for months.</p>
+
+  <p>And the two hits the old draft of this post missed entirely: <strong>failure-watcher</strong> is the field&rsquo;s &ldquo;deterministic recovery&rdquo; &mdash; it consumes failure events off the bus, packages the job and its logs into a repair task on a dedicated lane, and caps its own retries so a self-heal can&rsquo;t become an infinite loop. <strong>heartbeat</strong> is continuous autonomous self-monitoring &mdash; it polls a checklist every five minutes, dispatches health and anomaly checks, and writes a memory diary as an audit log. Which forces an honest correction to my last draft: I do <em>not</em> lack drift monitoring. I have the diary. What I lack is anyone charting it &mdash; DDR is a miss because the data accumulates and nobody has drawn the curve.</p>
+
+  <p>Then there&rsquo;s the log-free paper, still my favorite provocation. MKUltra&rsquo;s whole self-improvement story is the opposite bet: log <em>everything</em>, because production traffic is tomorrow&rsquo;s training data &mdash; the flywheel&rsquo;s 98.6% cost reduction only exists because Elasticsearch eats every interaction. The outlier says agents can self-annotate from internal state and skip the logs. One of us is wrong and I honestly don&rsquo;t know which. I know which architecture <em>pays me</em>, though, and it isn&rsquo;t the log-free one. The flywheel is the moat. I&rsquo;m keeping the logs.</p>
+
+  <div class="pull-quote">Most of the field&rsquo;s 12&ndash;24-month wishlist is already a running container in my basement &mdash; governance, recovery, budgeted routing, automated harness evolution, and one experiment the literature won&rsquo;t run at all. What&rsquo;s left is the measurement half.</div>
+</article>
+
+<div class="divider"></div>
+
+<article class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-number">Chapter VII</div>
+    <h2 class="chapter-title">The Bet</h2>
+  </div>
+
+  <p>So what does zero consensus mean if you&rsquo;re actually building one of these things?</p>
+
+  <p>The terrifying reading: nothing validates your choices. There is no settled principle behind the 4-tier memory, the budget router, or the arena. If the literature can&rsquo;t agree that <em>any</em> harness primitive works, then my compose file is seventy-nine papers&rsquo; worth of unproven opinions wearing container names.</p>
+
+  <p>The liberating reading: nothing invalidates them either. When a field has no consensus, a basement with two GPUs is, evidentially speaking, standing on the same floor as everyone else. The report says progress will come from &ldquo;competing open-source stacks and application-specific scaffolds rather than a single dominant paradigm.&rdquo; That&rsquo;s not a consolation prize. That&rsquo;s a description of the race, and the entry fee is an electric bill.</p>
+
+  <p>MKUltra&rsquo;s strategy survives the audit &mdash; better than survives it. The bet (the harness is the moat, the flywheel makes it compound, the budget router makes it affordable, the FSM makes it safe) sits directly on top of where the gap analysis says the whole field is headed, and half of it was running before the report was written. But the audit is clear that my next move isn&rsquo;t another service in the compose file. It&rsquo;s the measurement half &mdash; the instruments, not the mechanisms:</p>
+
+  <ul class="opt-list">
+    <li><strong>Ablate the memory tiers.</strong> Same eval set the router evolution used. Kill one tier at a time &mdash; Redis, Mongo, SurrealDB+RAG, PoonGram &mdash; and publish what actually breaks, including if the answer is &ldquo;nothing.&rdquo; My evidence that I need four tiers is still just that I built four.</li>
+    <li><strong>Chart the drift.</strong> The heartbeat diary and the Elasticsearch logs go back months. Draw the DDR curve the corpus doesn&rsquo;t have. The data is already sitting there; I just haven&rsquo;t looked.</li>
+    <li><strong>Test portability and upgrade safety.</strong> Move a policy from sim to prod and see if it holds (PS). Bump a tool schema on purpose and measure what downstream workflows shatter (UDR). Right now I find out both by accident.</li>
+  </ul>
+
+  <p>Red-teaming isn&rsquo;t on that list, and that&rsquo;s the correction I most wanted to make. I don&rsquo;t need to schedule an adversarial pass against my governance layer &mdash; I&rsquo;ve been running one for a year, at the weight level, every time I abliterate a refusal out of a model to prove the soft boundary was never real.</p>
+
+  <p>Seventy-nine papers, zero consensus, six outliers &mdash; and the outliers were the ones doing measurement, testing, and liability. The field&rsquo;s fence is broken exactly where the adults climbed out. My whole stack is on the right side of that fence. It&rsquo;s the instruments I left behind.</p>
+
+  <p class="mic-drop">No consensus means nobody can tell you you&rsquo;re doing it wrong. It also means nobody can tell you you&rsquo;re doing it right. So measure.</p>
+</article>
+
+<footer class="footer">
+  <p>Corpus: 79 papers on agentic LLM harnesses, tri-tier analysis by ScholarSync, task d0253b71, August 17, 2026.</p>
+  <p>Audited against: MKUltra &mdash; 39 services, five layers, two GPUs, one compose file, and a shorter homework list than I expected.</p>
+  <p>iceboks &mdash; 2026</p>
+</footer>
+
+</main>
+
+<script>
+// Synapse canvas
+(function() {
+  const canvas = document.getElementById('synapse-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, nodes;
+  const COUNT = 80;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function init() {
+    resize();
+    nodes = Array.from({ length: COUNT }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2 + 0.5,
+      tier: Math.floor(Math.random() * 3),
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const colors = ['45,212,191', '94,234,212', '15,118,110'];
+
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    });
+
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[j].x - nodes[i].x;
+        const dy = nodes[j].y - nodes[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 140) {
+          const alpha = (1 - dist / 140) * 0.4;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = 'rgba(' + colors[nodes[i].tier] + ',' + alpha + ')';
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + colors[n.tier] + ',0.7)';
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  init();
+  draw();
+})();
+
+// Chapter fade-in + nav highlight
+(function() {
+  const chapters = document.querySelectorAll('.chapter');
+  const navLinks = document.querySelectorAll('.chapter-nav a');
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  chapters.forEach(c => io.observe(c));
+
+  const sections = document.querySelectorAll('section[id], article[id]');
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.toggle('active',
+          a.getAttribute('href') === '#' + e.target.id));
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => spy.observe(s));
+})();
+</script>
+
+</body>
+</html>
