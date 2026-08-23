@@ -12,6 +12,7 @@
     --bg-surface: #0d0d12;
     --bg-elevated: #14141c;
     --green: #a3e635;
+    --accent-rgb: 163, 230, 53;
     --green-light: #bef264;
     --green-dim: #3f6212;
     --purple: #6b21a8;
@@ -511,8 +512,49 @@
     .big-quote { margin: 2rem -0.5rem; padding: 1.5rem 1.25rem; font-size: 1.05rem; }
     .pull-quote { font-size: 1rem; }
   }
+/* === POST AUDIO PLAYER (TTS narration) === */
+.post-audio {
+  max-width: 720px;
+  margin: -1rem auto 2.5rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(var(--accent-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+.post-audio .pa-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.5));
+}
+.post-audio .pa-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.post-audio .pa-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.post-audio .pa-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.post-audio audio {
+  flex: 1;
+  height: 38px;
+  min-width: 180px;
+  filter: invert(0.92) hue-rotate(180deg) saturate(0.6);
+}
+@media (max-width: 600px) {
+  .post-audio { flex-wrap: wrap; margin: 0 1.25rem 2rem; }
+  .post-audio audio { width: 100%; flex-basis: 100%; }
+}
 </style>
-<script src="../site.assets/analytics.js"></script>
+<script src="../site.assets/analytics.js?v=20260823"></script>
 </head>
 <body>
 
@@ -547,6 +589,16 @@
   <div class="hero-byline">iceboks &mdash; 2026</div>
   <div class="hero-scroll">Scroll</div>
 </section>
+
+<!-- post-audio -->
+<div class="post-audio">
+  <span class="pa-icon">🎧</span>
+  <div class="pa-meta">
+    <span class="pa-label">Listen</span>
+    <span class="pa-sub">narrated · Kokoro TTS</span>
+  </div>
+  <audio controls preload="none" src="audio/claims-removed.mp3"></audio>
+</div>
 
 <main class="content">
 
