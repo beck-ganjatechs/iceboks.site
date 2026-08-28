@@ -6,9 +6,9 @@
 <title>iceboks.site</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="description" content="Quantum-Poontanglement Research Lab. Field notes from the edge of artificial consciousness. Music, art, interactive demos, and AI research.">
+<meta name="description" content="Field notes from a basement agent lab. Harnesses, memory systems, honest failure reports, music, art, demos. For collaborators who want high-agency systems builders.">
 <meta property="og:title" content="iceboks.site">
-<meta property="og:description" content="Field notes from the edge of artificial consciousness. Music, art, interactive demos, and AI research.">
+<meta property="og:description" content="Agent OS lab notes, proof over theater. Collaborate if your cause needs someone who ships on metal.">
 <meta property="og:image" content="https://iceboks.site/art/images/iceboks-logo.png">
 <meta property="og:url" content="https://iceboks.site">
 <meta property="og:type" content="website">
@@ -167,6 +167,91 @@
       padding: 1rem;
     }
     .portal-sub { display: none; }
+  }
+
+
+  /* === COLLAB STRIP === */
+  .collab-strip {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: -2rem auto 3rem;
+    padding: 0 2rem;
+  }
+  .collab-card {
+    display: block;
+    text-decoration: none;
+    color: var(--text);
+    background: var(--bg-surface);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 14px;
+    padding: 1.35rem 1.6rem;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .collab-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #c084fc, #a855f7);
+  }
+  .collab-card:hover {
+    border-color: rgba(168, 85, 247, 0.55);
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.12), 0 8px 28px rgba(0,0,0,0.35);
+    transform: translateY(-2px);
+  }
+  .collab-kicker {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin-bottom: 0.45rem;
+  }
+  .collab-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+    color: #fff;
+  }
+  .collab-body {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+    margin-bottom: 0.75rem;
+  }
+  .collab-cta {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--accent-light);
+  }
+  @media (max-width: 480px) {
+    .collab-strip { padding: 0 1.25rem; margin-bottom: 2rem; }
+  }
+
+  .site-footer a {
+    color: var(--accent-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(168,85,247,0.3);
+  }
+  .site-footer a:hover { color: #fff; }
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    justify-content: center;
+    margin: 1.25rem 0 0.5rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   /* === POST GRID === */
@@ -355,7 +440,7 @@
   <a href="art.html" class="portal" data-glyph="&#9670;" style="--portal-color: #ff8800; --portal-rgb: 255, 136, 0; --portal-delay: 0.15s;">
     <div class="portal-icon">&#9670;</div>
     <div class="portal-label">Art</div>
-    <div class="portal-sub">Latent visions</div>
+    <div class="portal-sub">108 works</div>
     <div class="portal-glow"></div>
   </a>
   <a href="demo/index.html" class="portal" data-glyph="&#9678;" style="--portal-color: #00e5ff; --portal-rgb: 0, 229, 255; --portal-delay: 0.3s;">
@@ -363,6 +448,17 @@
     <div class="portal-label">Demos</div>
     <div class="portal-sub">Interactive labs</div>
     <div class="portal-glow"></div>
+  </a>
+</div>
+
+
+<!-- ==================== COLLABORATORS ==================== -->
+<div class="collab-strip">
+  <a href="collaborate.html" class="collab-card">
+    <div class="collab-kicker">For collaborators &amp; causes</div>
+    <div class="collab-title">I build agent operating systems — and delete the lies in the README.</div>
+    <div class="collab-body">High-agency lab energy. Proof harnesses. Honest field notes. If your mission needs someone who ships on metal and keeps the weird, start here.</div>
+    <div class="collab-cta">collaborate.html &rarr; who I am · three receipts · reach out</div>
   </a>
 </div>
 
@@ -598,6 +694,13 @@
 <footer class="site-footer">
   <p>Field notes from the edge of artificial consciousness.</p>
   <p>Where the sacred and the profane share a latent space.</p>
+  <div class="footer-links">
+    <a href="collaborate.html">Collaborate</a>
+    <a href="https://github.com/beck-ganjatechs" target="_blank" rel="noopener">GitHub</a>
+    <a href="art.html">Art</a>
+    <a href="music.html">Music</a>
+    <a href="demo/index.html">Demos</a>
+  </div>
   <p>iceboks.site &mdash; 2026</p>
 </footer>
 
