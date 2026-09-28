@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Collaborate — iceboks</title>
+<title>About &amp; Collaborate — iceboks</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="description" content="For collaborators and causes: iceboks builds agent operating systems, proof harnesses, and honest lab notes — high-agency, local-first, allergic to theater.">
-<meta property="og:title" content="Collaborate — iceboks">
-<meta property="og:description" content="Join causes that need a systems builder who ships on metal, deletes false README claims, and keeps the weird.">
+<meta name="description" content="About iceboks: builder of agent operating systems, proof harnesses, and honest lab notes — high-agency, local-first, allergic to theater. Open for collaboration.">
+<meta property="og:title" content="About &amp; Collaborate — iceboks">
+<meta property="og:description" content="Systems builder shipping on metal, deleting false README claims, and keeping the weird. Get in touch at iceboks@duck.com.">
 <meta property="og:image" content="https://iceboks.site/art/images/iceboks-logo.png">
 <meta property="og:url" content="https://iceboks.site/collaborate.html">
 <meta name="twitter:card" content="summary_large_image">
@@ -85,6 +85,42 @@
     border-bottom: 1px solid rgba(168, 85, 247, 0.35);
   }
   a.inline:hover { color: #fff; border-bottom-color: var(--accent); }
+  .contact-box {
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 10px;
+    padding: 1.15rem 1.35rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .contact-label {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent-light);
+  }
+  .contact-email {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: color 0.2s ease;
+  }
+  .contact-email:hover {
+    color: var(--accent-light);
+  }
   .cta-row {
     display: flex;
     flex-wrap: wrap;
@@ -109,7 +145,7 @@
     border: 1px solid var(--accent);
     color: #fff;
   }
-  .btn-primary:hover { background: var(--accent); }
+  .btn-primary:hover { background: var(--accent); color: #fff; }
   .btn-ghost {
     background: transparent;
     border: 1px solid rgba(255,255,255,0.12);
@@ -146,25 +182,35 @@
 <a href="index.html" class="back-link">&larr; iceboks.site</a>
 
 <section class="hero" id="hero">
-  <div class="hero-title">Collaborate</div>
-  <div class="hero-byline">for causes, labs, and people who want the whole brain</div>
+  <div class="hero-title">About &amp; Collaborate</div>
+  <div class="hero-byline">for causes, labs, and builders who want the whole brain</div>
 </section>
 
 <div class="wrap">
   <p class="lead">
-    I build agent <em>operating systems</em> and proof harnesses on real hardware —
-    then write the failure reports in public. If your mission needs someone who ships
-    on metal, deletes false README claims, and keeps the weird: this page is for you.
+    I build agent <em>operating systems</em>, deterministic proof harnesses, and local-first AI runtimes on real hardware —
+    then write the failure reports in public. If your mission needs someone who ships on metal, deletes false README claims,
+    and moves fast without losing the weird: this page is for you.
   </p>
 
   <h2>Who I am in a room</h2>
   <div class="card">
     <ul class="clean">
-      <li><strong>High-agency solo systems builder</strong> — basement lab, 100+ dockerized experiments, local-first by default.</li>
-      <li><strong>Allergic to theater</strong> — I published the commit that removed features my README invented.</li>
-      <li><strong>Harness literacy</strong> — multi-agent loops, memory tiers, evals, budget routing; dual-Grok proof rails so models can’t fake disk writes.</li>
-      <li><strong>Creative stack</strong> — music, latent-space gallery, interactive demos. The brand is playful on purpose; the engineering is not a joke.</li>
-      <li><strong>Vertical operator</strong> — Iceboks AI Ops for SMBs; regulated product work (AuthZ/IDOR fixes that made it to merge requests).</li>
+      <li><strong>High-agency solo systems builder</strong> — basement lab, bare-metal Threadrippers, 100+ dockerized experiments, local-first by default.</li>
+      <li><strong>Allergic to theater</strong> — proof over applause. I publish the failure reports, the unvarnished evals, and the commit that deleted features my README invented.</li>
+      <li><strong>Harness &amp; agent literacy</strong> — autonomous agentic loops, hierarchical memory tiers, sealed evals, budget routing, and tamper-proof verification rails so models can’t fake disk writes.</li>
+      <li><strong>Model surgery &amp; local runtimes</strong> — open-weight inference stacks (vLLM, SGLang, Ollama), hybrid SSM architectures, steering, and abliteration on bare metal.</li>
+      <li><strong>Full creative &amp; vertical stack</strong> — music production, latent-space generative art, interactive lab demos; alongside production engineering, SMB AI ops, and security-critical AuthZ/IDOR fixes.</li>
+    </ul>
+  </div>
+
+  <h2>How we can collaborate</h2>
+  <div class="card">
+    <ul class="clean">
+      <li><strong>Agent Runtimes &amp; Harness Engineering:</strong> Designing resilient multi-agent execution loops, memory compaction systems, tool verification rails, and recovery harnesses that don't fall apart under entropy.</li>
+      <li><strong>Open-Weights &amp; Model Research:</strong> Red-teaming, steering, abliteration, benchmark stress testing, and real-world eval design on local GPU hardware.</li>
+      <li><strong>Stealth &amp; Early-Stage Lab Acceleration:</strong> Acting as an autonomous player-coach who transforms raw research papers and whiteboards into robust, running containerized infrastructure on real hardware.</li>
+      <li><strong>High-Impact Missions &amp; Open Source:</strong> Teaming up on ambitious tools, public-good AI infrastructure, or unconventional technical ventures with teams that value craft and radical candor.</li>
     </ul>
   </div>
 
@@ -191,35 +237,46 @@
   <h2>Good fit</h2>
   <div class="card">
     <ul class="clean">
-      <li>Open-source / open-weights labs and agent runtimes (Hermes-class, local models, evals)</li>
-      <li>Startups that need player-coaches who build agents <em>and</em> the rails that catch bullshit</li>
-      <li>Sovereign / self-hosted AI, edge stacks, weird technical product</li>
-      <li>Causes that want a builder-writer, not a beige LinkedIn clone</li>
+      <li>Open-source / open-weights labs and agent runtimes (Hermes-class, local models, evals, memory engines)</li>
+      <li>Founders &amp; teams who need a high-velocity builder to turn messy frontier architectures into solid metal</li>
+      <li>Sovereign / self-hosted AI stacks, edge deployments, and unconventional technical products</li>
+      <li>Causes and research projects that want an authentic builder-writer, not corporate slide-deck theater</li>
     </ul>
   </div>
 
   <h2>Bad fit</h2>
   <div class="card">
     <ul class="clean">
-      <li>Roles that need me to hide the lab notebook and only ship slide decks</li>
-      <li>SEO content farms and “AI blog automation” cosplay</li>
-      <li>Teams that punish honesty about incomplete systems</li>
+      <li>Roles that require hiding the lab notebook and only shipping pitch decks</li>
+      <li>SEO content farms, synthetic benchmark chasing, and "AI wrapper" hype</li>
+      <li>Teams that punish honesty about incomplete or failing systems</li>
     </ul>
   </div>
 
-  <h2>Reach out</h2>
+  <h2>Let's build together</h2>
   <div class="card">
-    <p style="color:var(--text-dim);line-height:1.65;margin:0 0 0.5rem;">
-      Tell me what you’re building and why it matters. Link a repo, a paper, or a broken production story.
-      I respond better to specific missions than to generic “we’re disrupting X.”
+    <p style="color:var(--text-dim);line-height:1.65;margin:0 0 1rem;font-size:1rem;">
+      Whether you're developing an autonomous agent runtime, exploring novel model architectures, hacking on open-source tools, or untangling a gnarly production failure — let's connect.
     </p>
+    <p style="color:var(--text-dim);line-height:1.65;margin:0 0 1.25rem;">
+      Send me a note with what you're working on, why it matters, and where things get interesting. Repos, architecture diagrams, research papers, or broken production stories are always welcome.
+    </p>
+    
+    <div class="contact-box">
+      <div class="contact-info">
+        <span class="contact-label">Direct Email</span>
+        <a href="mailto:iceboks@duck.com" class="contact-email">iceboks@duck.com</a>
+      </div>
+      <a class="btn btn-primary" href="mailto:iceboks@duck.com">&#9993; Email iceboks</a>
+    </div>
+
     <div class="cta-row">
-      <a class="btn btn-primary" href="https://github.com/beck-ganjatechs" target="_blank" rel="noopener">GitHub — beck-ganjatechs</a>
-      <a class="btn btn-ghost" href="index.html">Field notes home</a>
+      <a class="btn btn-ghost" href="https://github.com/beck-ganjatechs" target="_blank" rel="noopener">GitHub — beck-ganjatechs</a>
+      <a class="btn btn-ghost" href="index.html">&larr; Field notes home</a>
       <a class="btn btn-ghost" href="https://iceboks.site">iceboks.site</a>
     </div>
-    <p style="margin-top:1.25rem;font-family:'Source Code Pro',monospace;font-size:0.7rem;color:var(--text-muted);letter-spacing:0.06em;">
-      Aurora / Denver · lab on metal · iceboks
+    <p style="margin-top:1.25rem;font-family:'Source Code Pro',monospace;font-size:0.75rem;color:var(--text-muted);letter-spacing:0.06em;">
+      Aurora / Denver · lab on metal · <a class="inline" href="mailto:iceboks@duck.com">iceboks@duck.com</a>
     </p>
   </div>
 </div>
