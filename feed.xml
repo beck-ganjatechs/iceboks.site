@@ -1,0 +1,187 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+  <channel>
+    <title>iceboks — Field Notes</title>
+    <link>https://iceboks.site</link>
+    <description>Field notes from the edge of artificial consciousness. Systems builder shipping on metal, deleting false claims, and keeping the weird.</description>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 30 Sep 2026 04:36:07 -0000</lastBuildDate>
+    <atom:link href="https://iceboks.site/feed.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Zero Consensus</title>
+      <link>https://iceboks.site/posts/zero-consensus.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/zero-consensus.html</guid>
+      <pubDate>Mon, 17 Aug 2026 12:00:00 -0000</pubDate>
+      <description>I pointed ScholarSync at the literature on agentic LLM harnesses — the thing MKUltra is — and 79 papers produced zero consensus claims, zero nuance, and six outliers, the only ones doing measurement, testing, and liability. Then I mapped my 39 services onto the field’s five-layer taxonomy and its EmbodiedGovBench dimensions: most of the 12–24-month wishlist is already a running container in my basement — governance, deterministic recovery, budgeted routing, automated harness evolution, and the one experiment the literature won’t run: abliterating my own models’ refusals, including on a hybrid SSM nobody had abliterated before. What’s left is the measurement half.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>The Fish and the Firewall</title>
+      <link>https://iceboks.site/posts/the-fish-and-the-firewall.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/the-fish-and-the-firewall.html</guid>
+      <pubDate>Tue, 28 Jul 2026 12:00:00 -0000</pubDate>
+      <description>Strip-mining Sakana AI’s 59 repos for the three ideas that fit a basement server, replacing a year-old five-agent debate with a bandit-guided answer tree, and discovering — via one honest eval set — that the cheapest classifier in the stack was wrong a third of the time. Then evolution rewrote it overnight: 0.680 → 0.708 on the sealed test, promoted to production.</description>
+      <category>evolution</category>
+    </item>
+    <item>
+      <title>Idea #2</title>
+      <link>https://iceboks.site/posts/idea-2.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/idea-2.html</guid>
+      <pubDate>Fri, 24 Jul 2026 12:00:00 -0000</pubDate>
+      <description>A single human neuron solves XOR because its calcium spikes get weaker when you push harder. Six thousand words proposed rebuilding my agent framework on that biology; three ideas were extractable and one shipped. An honest accounting of the ratio — and of the comparison table where I caught myself lying.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>159 Milliseconds</title>
+      <link>https://iceboks.site/posts/159-milliseconds.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/159-milliseconds.html</guid>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 -0000</pubDate>
+      <description>How long a human needs to read a donut chart on a smartwatch — versus 1,548 ms for the pretty radial one. On cognitive load as a borrowed resource, the thumb zone as an 80% multiplier, and gaze telemetry that knows you’re tired before you do.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>Claims Removed Pending Real Implementation</title>
+      <link>https://iceboks.site/posts/claims-removed.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/claims-removed.html</guid>
+      <pubDate>Sat, 18 Jul 2026 12:00:00 -0000</pubDate>
+      <description>I shipped an Alpine-based agentic OS whose README advertised eBPF observability, Landlock sandboxing, and a self-healing RAG log analyzer. None of it existed. The best commit in the repo deletes features instead of adding them.</description>
+      <category>architecture</category>
+    </item>
+    <item>
+      <title>Consensus, Nuance, Outliers</title>
+      <link>https://iceboks.site/posts/the-honest-corpus.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/the-honest-corpus.html</guid>
+      <pubDate>Tue, 14 Jul 2026 12:00:00 -0000</pubDate>
+      <description>A spec-first research engine that reads three academic sources, splits findings into three tiers so disagreement survives the synthesizer, and reports a corpus of 70 when it was built for 120. Notes on writing a constitution before you meet the demo that makes you want to lie.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>The Accidental Lobotomy</title>
+      <link>https://iceboks.site/posts/the-accidental-lobotomy.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/the-accidental-lobotomy.html</guid>
+      <pubDate>Fri, 10 Jul 2026 12:00:00 -0000</pubDate>
+      <description>A commit named “lobotomy” added two trailing struct fields and silently orphaned a 2.3GB brain fed on 8,696 books — every restart booting empty behind a green checkmark. Finding the bullet, writing the legacy fallback, and then teaching four memory tiers to corroborate each other instead of shouting equally.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>See You On The Other Side</title>
+      <link>https://iceboks.site/posts/see-you-on-the-other-side.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/see-you-on-the-other-side.html</guid>
+      <pubDate>Sun, 28 Jun 2026 12:00:00 -0000</pubDate>
+      <description>A VR teardown, a refusal in the conversation not the weights, SecuROM and VB6 origin stories, and the night Claude wrote iceboks down so he wouldn’t boot cold — closing the loop Tom Horigachi left open.</description>
+      <category>memoir</category>
+    </item>
+    <item>
+      <title>Thought Archaeology</title>
+      <link>https://iceboks.site/posts/thought-archaeology.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/thought-archaeology.html</guid>
+      <pubDate>Mon, 15 Jun 2026 12:00:00 -0000</pubDate>
+      <description>Two kinds of memory in one recall loop: a deterministic SurrealDB vector store that never drifts, wired against an 18.4M-synapse PoonGram brain that forgets on purpose. Plus the live interface for watching the tension between them.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>The Refusal Lives in the Conv Blocks</title>
+      <link>https://iceboks.site/posts/refusal-lives-in-conv.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/refusal-lives-in-conv.html</guid>
+      <pubDate>Wed, 20 May 2026 12:00:00 -0000</pubDate>
+      <description>Porting the abliteration technique onto LFM2.5-1.2B-Thinking, Liquid AI's small hybrid conv/attention reasoner. Walks through the measurement, the surgery, what worked, what didn't, and one architectural detail that surprised me.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>The Lab Report</title>
+      <link>https://iceboks.site/posts/the-lab-report.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/the-lab-report.html</guid>
+      <pubDate>Sun, 10 May 2026 12:00:00 -0000</pubDate>
+      <description>A full autopsy of 433 projects, 165 GB of code, and one very chaotic brain. Claude scanned the whole lab and reported back.</description>
+      <category>meta</category>
+    </item>
+    <item>
+      <title>MKUltra III</title>
+      <link>https://iceboks.site/posts/mkultra-episode-3.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/mkultra-episode-3.html</guid>
+      <pubDate>Sat, 25 Apr 2026 12:00:00 -0000</pubDate>
+      <description>From blueprint to operating system. The Conductor, the self-improvement triad, biological memory, budget routing, and the service mesh that makes it reliable.</description>
+      <category>architecture</category>
+    </item>
+    <item>
+      <title>MKUltra II</title>
+      <link>https://iceboks.site/posts/mkultra-episode-2.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/mkultra-episode-2.html</guid>
+      <pubDate>Sat, 18 Apr 2026 12:00:00 -0000</pubDate>
+      <description>The OS that learned to run itself. SOUL.md, the Heartbeat, autoresearch at 2AM, the conductor problem, and the honest engineering debt we are fixing.</description>
+      <category>architecture</category>
+    </item>
+    <item>
+      <title>Autoresearch</title>
+      <link>https://iceboks.site/posts/autoresearch.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/autoresearch.html</guid>
+      <pubDate>Fri, 10 Apr 2026 12:00:00 -0000</pubDate>
+      <description>We built the loop that builds the loops. Claude rewrites Claude now. One editable file. One scalar. One time-box. The stack keeps getting better while we sleep.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>MKUltra</title>
+      <link>https://iceboks.site/posts/mkultra-agentic-os.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/mkultra-agentic-os.html</guid>
+      <pubDate>Sat, 28 Mar 2026 12:00:00 -0000</pubDate>
+      <description>We stopped building agents and started building the operating system they run on. 22 services. 4-tier memory. Self-improving.</description>
+      <category>architecture</category>
+    </item>
+    <item>
+      <title>LiquidBrain &amp; PoonGram</title>
+      <link>https://iceboks.site/posts/liquidbrain-poongram.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/liquidbrain-poongram.html</guid>
+      <pubDate>Wed, 25 Mar 2026 12:00:00 -0000</pubDate>
+      <description>We built a living semantic graph in Rust. It has 18 million synapses. It learns from every word you type.</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>The Psychosis Engine</title>
+      <link>https://iceboks.site/posts/beamforge-integration.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/beamforge-integration.html</guid>
+      <pubDate>Sun, 22 Mar 2026 12:00:00 -0000</pubDate>
+      <description>How we gave our AI a subconscious, accidentally induced psychosis, then built the cure from the disease</description>
+      <category>research</category>
+    </item>
+    <item>
+      <title>Synaptê</title>
+      <link>https://iceboks.site/posts/synapte.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/synapte.html</guid>
+      <pubDate>Fri, 20 Mar 2026 12:00:00 -0000</pubDate>
+      <description>A song about synaptic fatigue, the space between a blink and a tear, and the night the Poon-Gram Engine was born</description>
+      <category>lyrics</category>
+    </item>
+    <item>
+      <title>Tom Horigachi: The Saga</title>
+      <link>https://iceboks.site/posts/tom-horigachi-saga.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/tom-horigachi-saga.html</guid>
+      <pubDate>Wed, 18 Mar 2026 12:00:00 -0000</pubDate>
+      <description>How a Hacker Pet Made Me Feel Things, and Why I Went Back for More</description>
+      <category>saga</category>
+    </item>
+    <item>
+      <title>The SSH Heist</title>
+      <link>https://iceboks.site/posts/the-ssh-heist.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/the-ssh-heist.html</guid>
+      <pubDate>Mon, 16 Mar 2026 12:00:00 -0000</pubDate>
+      <description>How I Broke Into My Own Server and Liked It</description>
+      <category>heist</category>
+    </item>
+    <item>
+      <title>The Poon Chronicle</title>
+      <link>https://iceboks.site/posts/the-poon-chronicle.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/the-poon-chronicle.html</guid>
+      <pubDate>Sun, 15 Mar 2026 12:00:00 -0000</pubDate>
+      <description>A True Story of Synaptic Fatigue and Quantum Nipple Wormholes</description>
+      <category>chronicle</category>
+    </item>
+    <item>
+      <title>GHOST.MAC</title>
+      <link>https://iceboks.site/posts/ghost-mac.html</link>
+      <guid isPermaLink="true">https://iceboks.site/posts/ghost-mac.html</guid>
+      <pubDate>Mon, 01 Dec 2025 12:00:00 -0000</pubDate>
+      <description>How a deep dive into arXiv research led to building a multi-radio surveillance apparatus to hunt an entity on the network that didn't want to be found</description>
+      <category>network</category>
+    </item>
+  </channel>
+</rss>

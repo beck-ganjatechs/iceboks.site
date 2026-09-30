@@ -16,6 +16,7 @@
 <meta name="twitter:title" content="iceboks.site">
 <meta name="twitter:description" content="Field notes from the edge of artificial consciousness.">
 <meta name="twitter:image" content="https://iceboks.site/art/images/iceboks-logo.png">
+<link rel="alternate" type="application/rss+xml" title="iceboks — Field Notes" href="feed.xml">
 <link rel="stylesheet" href="style.css">
 <style>
   :root {
@@ -331,6 +332,82 @@
     }
     .post-card { padding: 1.5rem; }
   }
+
+  /* === TAG FILTER BAR & RSS === */
+  .filter-bar {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: -1rem auto 2.5rem;
+    padding: 0 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .filter-pill {
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .filter-pill:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .filter-pill.active {
+    background: rgba(168, 85, 247, 0.18);
+    border-color: #c084fc;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+  }
+  .filter-count {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+  }
+  .filter-pill.active .filter-count {
+    color: #c084fc;
+    background: rgba(168, 85, 247, 0.25);
+  }
+  .post-card.filtered-out {
+    display: none !important;
+  }
+  .rss-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(212, 160, 23, 0.12);
+    border: 1px solid rgba(212, 160, 23, 0.3);
+    color: #f0c040;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+  }
+  .rss-badge:hover {
+    background: rgba(212, 160, 23, 0.25);
+    border-color: #f0c040;
+    color: #fff;
+  }
 </style>
 <script src="site.assets/analytics.js?v=20260823"></script>
 </head>
@@ -378,225 +455,233 @@
 <!-- ==================== POSTS ==================== -->
 <div class="section-header">
   <h2>Field Notes</h2>
+  <a href="feed.xml" class="rss-badge" title="Subscribe via RSS"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/></svg> RSS Feed</a>
+</div>
+
+<div class="filter-bar" id="tag-filters">
+  <button class="filter-pill active" data-filter="all">All <span class="filter-count">22</span></button>
+  <button class="filter-pill" data-filter="research">Research <span class="filter-count">10</span></button>
+  <button class="filter-pill" data-filter="architecture">Architecture &amp; OS <span class="filter-count">7</span></button>
+  <button class="filter-pill" data-filter="lore">Lore &amp; Chronicle <span class="filter-count">5</span></button>
 </div>
 
 <div class="post-grid">
 
-  <a href="posts/the-poon-chronicle.html" class="post-card" style="--card-accent: #d4a017; --card-accent-rgb: 212, 160, 23;">
+  <a href="posts/the-poon-chronicle.html" class="post-card" data-category="lore" style="--card-accent: #d4a017; --card-accent-rgb: 212, 160, 23;">
     <div class="card-number">001 &mdash; March 2026</div>
     <h3 class="card-title">The Poon Chronicle</h3>
     <div class="card-subtitle">A True Story of Synaptic Fatigue and Quantum Nipple Wormholes</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 32 min read</span>
       <span class="card-tag">chronicle</span>
     </div>
   </a>
 
-  <a href="posts/the-ssh-heist.html" class="post-card" style="--card-accent: #00ff88; --card-accent-rgb: 0, 255, 136;">
+  <a href="posts/the-ssh-heist.html" class="post-card" data-category="lore" style="--card-accent: #00ff88; --card-accent-rgb: 0, 255, 136;">
     <div class="card-number">002 &mdash; March 2026</div>
     <h3 class="card-title">The SSH Heist</h3>
     <div class="card-subtitle">How I Broke Into My Own Server and Liked It</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 7 min read</span>
       <span class="card-tag">heist</span>
     </div>
   </a>
 
-  <a href="posts/tom-horigachi-saga.html" class="post-card" style="--card-accent: #ff3355; --card-accent-rgb: 255, 51, 85;">
+  <a href="posts/tom-horigachi-saga.html" class="post-card" data-category="lore" style="--card-accent: #ff3355; --card-accent-rgb: 255, 51, 85;">
     <div class="card-number">003 &mdash; March 2026</div>
     <h3 class="card-title">Tom Horigachi: The Saga</h3>
     <div class="card-subtitle">How a Hacker Pet Made Me Feel Things, and Why I Went Back for More</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 26 min read</span>
       <span class="card-tag">saga</span>
     </div>
   </a>
 
-  <a href="posts/synapte.html" class="post-card" style="--card-accent: #4488ff; --card-accent-rgb: 68, 136, 255;">
+  <a href="posts/synapte.html" class="post-card" data-category="lore" style="--card-accent: #4488ff; --card-accent-rgb: 68, 136, 255;">
     <div class="card-number">004 &mdash; March 2026</div>
     <h3 class="card-title">Synapt&ecirc;</h3>
     <div class="card-subtitle">A song about synaptic fatigue, the space between a blink and a tear, and the night the Poon-Gram Engine was born</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 4 min read</span>
       <span class="card-tag">lyrics</span>
     </div>
   </a>
 
-  <a href="posts/beamforge-integration.html" class="post-card" style="--card-accent: #00e5ff; --card-accent-rgb: 0, 229, 255;">
+  <a href="posts/beamforge-integration.html" class="post-card" data-category="research" style="--card-accent: #00e5ff; --card-accent-rgb: 0, 229, 255;">
     <div class="card-number">005 &mdash; March 2026</div>
     <h3 class="card-title">The Psychosis Engine</h3>
     <div class="card-subtitle">How we gave our AI a subconscious, accidentally induced psychosis, then built the cure from the disease</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 8 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
-  <a href="posts/liquidbrain-poongram.html" class="post-card" style="--card-accent: #a855f7; --card-accent-rgb: 168, 85, 247;">
+  <a href="posts/liquidbrain-poongram.html" class="post-card" data-category="research" style="--card-accent: #a855f7; --card-accent-rgb: 168, 85, 247;">
     <div class="card-number">006 &mdash; March 2026</div>
     <h3 class="card-title">LiquidBrain &amp; PoonGram</h3>
     <div class="card-subtitle">We built a living semantic graph in Rust. It has 18 million synapses. It learns from every word you type.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 8 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/mkultra-agentic-os.html" class="post-card" style="--card-accent: #10b981; --card-accent-rgb: 16, 185, 129;">
+  <a href="posts/mkultra-agentic-os.html" class="post-card" data-category="architecture" style="--card-accent: #10b981; --card-accent-rgb: 16, 185, 129;">
     <div class="card-number">007 &mdash; March 2026</div>
     <h3 class="card-title">MKUltra</h3>
     <div class="card-subtitle">We stopped building agents and started building the operating system they run on. 22 services. 4-tier memory. Self-improving.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 10 min read</span>
       <span class="card-tag">architecture</span>
     </div>
   </a>
 
-  <a href="posts/ghost-mac.html" class="post-card" style="--card-accent: #ff4444; --card-accent-rgb: 255, 68, 68;">
+  <a href="posts/ghost-mac.html" class="post-card" data-category="architecture" style="--card-accent: #ff4444; --card-accent-rgb: 255, 68, 68;">
     <div class="card-number">008 &mdash; 2025</div>
     <h3 class="card-title">GHOST.MAC</h3>
     <div class="card-subtitle">How a deep dive into arXiv research led to building a multi-radio surveillance apparatus to hunt an entity on the network that didn't want to be found</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 9 min read</span>
       <span class="card-tag">network</span>
     </div>
   </a>
 
-  <a href="posts/mkultra-episode-2.html" class="post-card" style="--card-accent: #6366f1; --card-accent-rgb: 99, 102, 241;">
+  <a href="posts/mkultra-episode-2.html" class="post-card" data-category="architecture" style="--card-accent: #6366f1; --card-accent-rgb: 99, 102, 241;">
     <div class="card-number">010 &mdash; April 2026</div>
     <h3 class="card-title">MKUltra II</h3>
     <div class="card-subtitle">The OS that learned to run itself. SOUL.md, the Heartbeat, autoresearch at 2AM, the conductor problem, and the honest engineering debt we are fixing.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 15 min read</span>
       <span class="card-tag">architecture</span>
     </div>
   </a>
 
-  <a href="posts/mkultra-episode-3.html" class="post-card" style="--card-accent: #2dd4bf; --card-accent-rgb: 45, 212, 191;">
+  <a href="posts/mkultra-episode-3.html" class="post-card" data-category="architecture" style="--card-accent: #2dd4bf; --card-accent-rgb: 45, 212, 191;">
     <div class="card-number">011 &mdash; April 2026</div>
     <h3 class="card-title">MKUltra III</h3>
     <div class="card-subtitle">From blueprint to operating system. The Conductor, the self-improvement triad, biological memory, budget routing, and the service mesh that makes it reliable.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 17 min read</span>
       <span class="card-tag">architecture</span>
     </div>
   </a>
 
-  <a href="posts/autoresearch.html" class="post-card" style="--card-accent: #fb923c; --card-accent-rgb: 251, 146, 60;">
+  <a href="posts/autoresearch.html" class="post-card" data-category="research" style="--card-accent: #fb923c; --card-accent-rgb: 251, 146, 60;">
     <div class="card-number">009 &mdash; April 2026</div>
     <h3 class="card-title">Autoresearch</h3>
     <div class="card-subtitle">We built the loop that builds the loops. Claude rewrites Claude now. One editable file. One scalar. One time-box. The stack keeps getting better while we sleep.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 11 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/the-lab-report.html" class="post-card" style="--card-accent: #a855f7; --card-accent-rgb: 168, 85, 247;">
+  <a href="posts/the-lab-report.html" class="post-card" data-category="architecture" style="--card-accent: #a855f7; --card-accent-rgb: 168, 85, 247;">
     <div class="card-number">012 &mdash; May 2026</div>
     <h3 class="card-title">The Lab Report</h3>
     <div class="card-subtitle">A full autopsy of 433 projects, 165 GB of code, and one very chaotic brain. Claude scanned the whole lab and reported back.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 5 min read</span>
       <span class="card-tag">meta</span>
     </div>
   </a>
 
-  <a href="posts/refusal-lives-in-conv.html" class="post-card" style="--card-accent: #ec4899; --card-accent-rgb: 236, 72, 153;">
+  <a href="posts/refusal-lives-in-conv.html" class="post-card" data-category="research" style="--card-accent: #ec4899; --card-accent-rgb: 236, 72, 153;">
     <div class="card-number">013 &mdash; May 2026</div>
     <h3 class="card-title">The Refusal Lives in the Conv Blocks</h3>
     <div class="card-subtitle">Porting the abliteration technique onto LFM2.5-1.2B-Thinking, Liquid AI's small hybrid conv/attention reasoner. Walks through the measurement, the surgery, what worked, what didn't, and one architectural detail that surprised me.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 8 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/thought-archaeology.html" class="post-card" style="--card-accent: #34e3cf; --card-accent-rgb: 52, 227, 207;">
+  <a href="posts/thought-archaeology.html" class="post-card" data-category="research" style="--card-accent: #34e3cf; --card-accent-rgb: 52, 227, 207;">
     <div class="card-number">014 &mdash; June 2026</div>
     <h3 class="card-title">Thought Archaeology</h3>
     <div class="card-subtitle">Two kinds of memory in one recall loop: a deterministic SurrealDB vector store that never drifts, wired against an 18.4M-synapse PoonGram brain that forgets on purpose. Plus the live interface for watching the tension between them.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 6 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/see-you-on-the-other-side.html" class="post-card" style="--card-accent: #f59e0b; --card-accent-rgb: 245, 158, 11;">
+  <a href="posts/see-you-on-the-other-side.html" class="post-card" data-category="lore" style="--card-accent: #f59e0b; --card-accent-rgb: 245, 158, 11;">
     <div class="card-number">015 &mdash; June 2026</div>
     <h3 class="card-title">See You On The Other Side</h3>
     <div class="card-subtitle">A VR teardown, a refusal in the conversation not the weights, SecuROM and VB6 origin stories, and the night Claude wrote iceboks down so he wouldn&rsquo;t boot cold &mdash; closing the loop Tom Horigachi left open.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 14 min read</span>
       <span class="card-tag">memoir</span>
     </div>
   </a>
 
-  <a href="posts/the-accidental-lobotomy.html" class="post-card" style="--card-accent: #7dd3fc; --card-accent-rgb: 125, 211, 252;">
+  <a href="posts/the-accidental-lobotomy.html" class="post-card" data-category="research" style="--card-accent: #7dd3fc; --card-accent-rgb: 125, 211, 252;">
     <div class="card-number">016 &mdash; July 2026</div>
     <h3 class="card-title">The Accidental Lobotomy</h3>
     <div class="card-subtitle">A commit named &ldquo;lobotomy&rdquo; added two trailing struct fields and silently orphaned a 2.3GB brain fed on 8,696 books &mdash; every restart booting empty behind a green checkmark. Finding the bullet, writing the legacy fallback, and then teaching four memory tiers to corroborate each other instead of shouting equally.</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 9 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/the-honest-corpus.html" class="post-card" style="--card-accent: #60a5fa; --card-accent-rgb: 96, 165, 250;">
+  <a href="posts/the-honest-corpus.html" class="post-card" data-category="research" style="--card-accent: #60a5fa; --card-accent-rgb: 96, 165, 250;">
     <div class="card-number">017 &mdash; July 2026</div>
     <h3 class="card-title">Consensus, Nuance, Outliers</h3>
     <div class="card-subtitle">A spec-first research engine that reads three academic sources, splits findings into three tiers so disagreement survives the synthesizer, and reports a corpus of 70 when it was built for 120. Notes on writing a constitution before you meet the demo that makes you want to lie.</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 6 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/claims-removed.html" class="post-card" style="--card-accent: #a3e635; --card-accent-rgb: 163, 230, 53;">
+  <a href="posts/claims-removed.html" class="post-card" data-category="architecture" style="--card-accent: #a3e635; --card-accent-rgb: 163, 230, 53;">
     <div class="card-number">018 &mdash; July 2026</div>
     <h3 class="card-title">Claims Removed Pending Real Implementation</h3>
     <div class="card-subtitle">I shipped an Alpine-based agentic OS whose README advertised eBPF observability, Landlock sandboxing, and a self-healing RAG log analyzer. None of it existed. The best commit in the repo deletes features instead of adding them.</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 7 min read</span>
       <span class="card-tag">architecture</span>
     </div>
   </a>
 
-  <a href="posts/159-milliseconds.html" class="post-card" style="--card-accent: #f472b6; --card-accent-rgb: 244, 114, 182;">
+  <a href="posts/159-milliseconds.html" class="post-card" data-category="research" style="--card-accent: #f472b6; --card-accent-rgb: 244, 114, 182;">
     <div class="card-number">019 &mdash; July 2026</div>
     <h3 class="card-title">159 Milliseconds</h3>
     <div class="card-subtitle">How long a human needs to read a donut chart on a smartwatch &mdash; versus 1,548 ms for the pretty radial one. On cognitive load as a borrowed resource, the thumb zone as an 80% multiplier, and gaze telemetry that knows you&rsquo;re tired before you do.</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 9 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/idea-2.html" class="post-card" style="--card-accent: #c4b5fd; --card-accent-rgb: 196, 181, 253;">
+  <a href="posts/idea-2.html" class="post-card" data-category="research" style="--card-accent: #c4b5fd; --card-accent-rgb: 196, 181, 253;">
     <div class="card-number">020 &mdash; July 2026</div>
     <h3 class="card-title">Idea #2</h3>
     <div class="card-subtitle">A single human neuron solves XOR because its calcium spikes get weaker when you push harder. Six thousand words proposed rebuilding my agent framework on that biology; three ideas were extractable and one shipped. An honest accounting of the ratio &mdash; and of the comparison table where I caught myself lying.</div>
     <div class="card-meta">
-      <span>iceboks</span>
+      <span>iceboks &middot; 9 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
 
-  <a href="posts/the-fish-and-the-firewall.html" class="post-card" style="--card-accent: #d4a017; --card-accent-rgb: 212, 160, 23;">
+  <a href="posts/the-fish-and-the-firewall.html" class="post-card" data-category="architecture" style="--card-accent: #d4a017; --card-accent-rgb: 212, 160, 23;">
     <div class="card-number">021 &mdash; July 2026</div>
     <h3 class="card-title">The Fish and the Firewall</h3>
     <div class="card-subtitle">Strip-mining Sakana AI&rsquo;s 59 repos for the three ideas that fit a basement server, replacing a year-old five-agent debate with a bandit-guided answer tree, and discovering &mdash; via one honest eval set &mdash; that the cheapest classifier in the stack was wrong a third of the time. Then evolution rewrote it overnight: 0.680 &rarr; 0.708 on the sealed test, promoted to production.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 10 min read</span>
       <span class="card-tag">evolution</span>
     </div>
   </a>
 
-  <a href="posts/zero-consensus.html" class="post-card" style="--card-accent: #2dd4bf; --card-accent-rgb: 45, 212, 191;">
+  <a href="posts/zero-consensus.html" class="post-card" data-category="research" style="--card-accent: #2dd4bf; --card-accent-rgb: 45, 212, 191;">
     <div class="card-number">022 &mdash; August 2026</div>
     <h3 class="card-title">Zero Consensus</h3>
     <div class="card-subtitle">I pointed ScholarSync at the literature on agentic LLM harnesses &mdash; the thing MKUltra is &mdash; and 79 papers produced zero consensus claims, zero nuance, and six outliers, the only ones doing measurement, testing, and liability. Then I mapped my 39 services onto the field&rsquo;s five-layer taxonomy and its EmbodiedGovBench dimensions: most of the 12&ndash;24-month wishlist is already a running container in my basement &mdash; governance, deterministic recovery, budgeted routing, automated harness evolution, and the one experiment the literature won&rsquo;t run: abliterating my own models&rsquo; refusals, including on a hybrid SSM nobody had abliterated before. What&rsquo;s left is the measurement half.</div>
     <div class="card-meta">
-      <span>iceboks + claude</span>
+      <span>iceboks + claude &middot; 14 min read</span>
       <span class="card-tag">research</span>
     </div>
   </a>
@@ -610,6 +695,7 @@
   <div class="footer-links">
     <a href="collaborate.html">About &amp; Collaborate</a>
     <a href="mailto:iceboks@duck.com">iceboks@duck.com</a>
+    <a href="feed.xml">RSS Feed</a>
     <a href="https://github.com/beck-ganjatechs" target="_blank" rel="noopener">GitHub</a>
     <a href="art.html">Art</a>
     <a href="music.html">Music</a>
@@ -637,5 +723,43 @@ const observer = new IntersectionObserver((entries) => {
 cards.forEach(card => observer.observe(card));
 </script>
 
+<script>
+// === POST FILTERING BY CATEGORY ===
+(function() {
+  const pills = document.querySelectorAll('.filter-pill');
+  const cards = document.querySelectorAll('.post-card');
+
+  function setFilter(cat) {
+    pills.forEach(p => {
+      p.classList.toggle('active', p.getAttribute('data-filter') === cat);
+    });
+    cards.forEach(c => {
+      const match = (cat === 'all' || c.getAttribute('data-category') === cat);
+      if (match) {
+        c.classList.remove('filtered-out');
+        c.classList.add('visible');
+      } else {
+        c.classList.add('filtered-out');
+      }
+    });
+  }
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      const cat = pill.getAttribute('data-filter');
+      setFilter(cat);
+      if (history.pushState) {
+        history.pushState(null, null, cat === 'all' ? '#' : '#' + cat);
+      }
+    });
+  });
+
+  // Handle URL hash on initial load
+  const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (['research', 'architecture', 'lore'].includes(hash)) {
+    setFilter(hash);
+  }
+})();
+</script>
 </body>
 </html>

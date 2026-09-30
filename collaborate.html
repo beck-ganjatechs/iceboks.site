@@ -12,6 +12,7 @@
 <meta property="og:image" content="https://iceboks.site/art/images/iceboks-logo.png">
 <meta property="og:url" content="https://iceboks.site/collaborate.html">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" type="application/rss+xml" title="iceboks — Field Notes" href="feed.xml">
 <link rel="stylesheet" href="style.css">
 <script src="site.assets/analytics.js?v=20260828"></script>
 <style>
@@ -265,7 +266,12 @@
     <div class="contact-box">
       <div class="contact-info">
         <span class="contact-label">Direct Email</span>
-        <a href="mailto:iceboks@duck.com" class="contact-email">iceboks@duck.com</a>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <a href="mailto:iceboks@duck.com" class="contact-email">iceboks@duck.com</a>
+          <button class="btn btn-ghost" id="copy-email-btn" title="Copy email address" aria-label="Copy email address" style="padding:0.3rem 0.65rem;font-size:0.7rem;cursor:pointer;border-radius:6px;">
+            <span id="copy-icon">⎘</span> <span id="copy-text">Copy</span>
+          </button>
+        </div>
       </div>
       <a class="btn btn-primary" href="mailto:iceboks@duck.com">&#9993; Email iceboks</a>
     </div>
@@ -287,5 +293,23 @@
 </footer>
 
 <script src="site.assets/synapse-bg.js"></script>
+<script>
+document.getElementById('copy-email-btn')?.addEventListener('click', function() {
+  navigator.clipboard.writeText('iceboks@duck.com').then(function() {
+    var text = document.getElementById('copy-text');
+    var icon = document.getElementById('copy-icon');
+    if (text) text.textContent = 'Copied!';
+    if (icon) icon.textContent = '✓';
+    setTimeout(function() {
+      if (text) text.textContent = 'Copy';
+      if (icon) icon.textContent = '⎘';
+    }, 2000);
+  }).catch(function() {
+    // fallback if clipboard API denied
+    var text = document.getElementById('copy-text');
+    if (text) text.textContent = 'iceboks@duck.com';
+  });
+});
+</script>
 </body>
 </html>

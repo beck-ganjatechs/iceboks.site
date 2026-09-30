@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="alternate" type="application/rss+xml" title="iceboks — Field Notes" href="../feed.xml">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LiquidBrain &amp; PoonGram — iceboks</title>
@@ -12,6 +14,107 @@
     --accent-dim: #3b0764;
     --accent-rgb: 168, 85, 247;
   }
+
+  /* === POST NAVIGATION & CODE COPY === */
+  .post-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 1rem;
+    margin: 4rem auto 2rem;
+    max-width: 800px;
+    padding: 2rem 1.5rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    z-index: 1;
+  }
+  .post-nav-item {
+    text-decoration: none;
+    color: var(--text-dim, #8a8578);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    transition: all 0.25s ease;
+    max-width: 42%;
+  }
+  .post-nav-item:hover {
+    color: var(--green-light, #c084fc);
+    transform: translateY(-2px);
+  }
+  .post-nav-next {
+    text-align: right;
+    margin-left: auto;
+  }
+  .post-nav-label {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted, #5a5650);
+  }
+  .post-nav-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .post-nav-home {
+    align-self: center;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted, #5a5650);
+    text-decoration: none;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    transition: all 0.25s ease;
+  }
+  .post-nav-home:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  @media (max-width: 640px) {
+    .post-nav {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .post-nav-item {
+      max-width: 100%;
+    }
+    .post-nav-next {
+      text-align: left;
+    }
+  }
+  pre {
+    position: relative !important;
+  }
+  .copy-code-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-dim, #8a8578);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+  }
+  pre:hover .copy-code-btn {
+    opacity: 1;
+  }
+  .copy-code-btn:hover {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: #c084fc;
+    color: #fff;
+  }
+
 </style>
 <script src="../site.assets/analytics.js?v=20260823"></script>
 </head>
@@ -50,7 +153,7 @@
 <section class="hero" id="hero">
   <div class="hero-title">LiquidBrain</div>
   <div class="hero-subtitle">A Living Semantic Graph in Rust. 18 Million Synapses. Learns From Every Word You Type. Built by infinition — forked, trained, and wired into an agentic OS by iceboks.</div>
-  <div class="hero-byline">iceboks + claude &mdash; march 2026</div>
+  <div class="hero-byline">iceboks + claude &mdash; march 2026 &middot; ~8 min read</div>
   <div class="hero-scroll">Scroll</div>
 </section>
 
@@ -302,6 +405,18 @@ LiquidBrain — port 7778 — 2.4GB brain — larger — code intelligence corpu
 Both learning. Both growing. Neither forgetting what matters.</pre>
   </div>
 </article>
+
+<nav class="post-nav">
+  <a href="beamforge-integration.html" class="post-nav-item post-nav-prev">
+    <span class="post-nav-label">&larr; Previous</span>
+    <span class="post-nav-title">The Psychosis Engine</span>
+  </a>
+  <a href="../index.html" class="post-nav-home">Field Notes</a>
+  <a href="mkultra-agentic-os.html" class="post-nav-item post-nav-next">
+    <span class="post-nav-label">Next &rarr;</span>
+    <span class="post-nav-title">MKUltra</span>
+  </a>
+</nav>
 
 </main>
 

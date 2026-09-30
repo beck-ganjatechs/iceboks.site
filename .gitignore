@@ -8,3 +8,5 @@ scratch/
 logs_audio.txt
 __pycache__/
 *.pyc
+*.log
+*.bak*

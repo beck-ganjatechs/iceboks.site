@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="alternate" type="application/rss+xml" title="iceboks — Field Notes" href="../feed.xml">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Claims Removed Pending Real Implementation — iceboks</title>
@@ -553,6 +555,107 @@
   .post-audio { flex-wrap: wrap; margin: 0 1.25rem 2rem; }
   .post-audio audio { width: 100%; flex-basis: 100%; }
 }
+
+  /* === POST NAVIGATION & CODE COPY === */
+  .post-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 1rem;
+    margin: 4rem auto 2rem;
+    max-width: 800px;
+    padding: 2rem 1.5rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    z-index: 1;
+  }
+  .post-nav-item {
+    text-decoration: none;
+    color: var(--text-dim, #8a8578);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    transition: all 0.25s ease;
+    max-width: 42%;
+  }
+  .post-nav-item:hover {
+    color: var(--green-light, #c084fc);
+    transform: translateY(-2px);
+  }
+  .post-nav-next {
+    text-align: right;
+    margin-left: auto;
+  }
+  .post-nav-label {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted, #5a5650);
+  }
+  .post-nav-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .post-nav-home {
+    align-self: center;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted, #5a5650);
+    text-decoration: none;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    transition: all 0.25s ease;
+  }
+  .post-nav-home:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  @media (max-width: 640px) {
+    .post-nav {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .post-nav-item {
+      max-width: 100%;
+    }
+    .post-nav-next {
+      text-align: left;
+    }
+  }
+  pre {
+    position: relative !important;
+  }
+  .copy-code-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-dim, #8a8578);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+  }
+  pre:hover .copy-code-btn {
+    opacity: 1;
+  }
+  .copy-code-btn:hover {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: #c084fc;
+    color: #fff;
+  }
+
 </style>
 <script src="../site.assets/analytics.js?v=20260823"></script>
 </head>
@@ -586,7 +689,7 @@
 <section class="hero" id="hero">
   <div class="hero-title">Claims Removed<br>Pending Real<br>Implementation</div>
   <div class="hero-subtitle">I shipped an AI operating system that claimed eBPF observability, Landlock sandboxing, and a self-healing RAG log analyzer. Then I read my own README.</div>
-  <div class="hero-byline">iceboks &mdash; 2026</div>
+  <div class="hero-byline">iceboks &mdash; 2026 &middot; ~7 min read</div>
   <div class="hero-scroll">Scroll</div>
 </section>
 
@@ -764,6 +867,18 @@
 
   <div class="mic-drop">Write the roadmap in the future tense. It&rsquo;s the only tense you&rsquo;ve earned.</div>
 </article>
+
+<nav class="post-nav">
+  <a href="the-honest-corpus.html" class="post-nav-item post-nav-prev">
+    <span class="post-nav-label">&larr; Previous</span>
+    <span class="post-nav-title">Consensus, Nuance, Outliers</span>
+  </a>
+  <a href="../index.html" class="post-nav-home">Field Notes</a>
+  <a href="159-milliseconds.html" class="post-nav-item post-nav-next">
+    <span class="post-nav-label">Next &rarr;</span>
+    <span class="post-nav-title">159 Milliseconds</span>
+  </a>
+</nav>
 
 <footer class="footer">
   <p>Base: Alpine Linux &middot; Live RAM boot &middot; BSPWM + polybar + eww &middot; 18 themes &middot; GUI installer</p>
