@@ -408,6 +408,77 @@
     border-color: #f0c040;
     color: #fff;
   }
+
+  /* === LIVE SEARCH BAR === */
+  .search-container {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+    margin: -1.25rem auto 1.5rem;
+    padding: 0 1.5rem;
+  }
+  .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    padding: 0.45rem 1rem 0.45rem 2.4rem;
+    transition: all 0.25s ease;
+  }
+  .search-wrap:focus-within {
+    border-color: #c084fc;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+  }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color 0.2s ease;
+  }
+  .search-wrap:focus-within .search-icon {
+    color: #c084fc;
+  }
+  #post-search {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.01em;
+  }
+  #post-search::placeholder {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  .search-clear {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.15rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    display: none;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
+  .search-clear:hover {
+    color: #fff;
+  }
+  .search-feedback {
+    text-align: center;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    min-height: 1.1rem;
+    letter-spacing: 0.04em;
+  }
+
 </style>
 <script src="site.assets/analytics.js?v=20260823"></script>
 </head>
@@ -456,6 +527,16 @@
 <div class="section-header">
   <h2>Field Notes</h2>
   <a href="feed.xml" class="rss-badge" title="Subscribe via RSS"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/></svg> RSS Feed</a>
+</div>
+
+
+<div class="search-container">
+  <div class="search-wrap">
+    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <input type="text" id="post-search" placeholder="Search notes (e.g. abliteration, sakana, rust, evals)..." autocomplete="off" spellcheck="false" aria-label="Search field notes">
+    <button id="search-clear" class="search-clear" aria-label="Clear search" title="Clear search">&times;</button>
+  </div>
+  <div id="search-feedback" class="search-feedback"></div>
 </div>
 
 <div class="filter-bar" id="tag-filters">
@@ -724,41 +805,115 @@ cards.forEach(card => observer.observe(card));
 </script>
 
 <script>
-// === POST FILTERING BY CATEGORY ===
+// === POST FILTERING & SEARCH ===
 (function() {
   const pills = document.querySelectorAll('.filter-pill');
   const cards = document.querySelectorAll('.post-card');
+  const searchInput = document.getElementById('post-search');
+  const searchClear = document.getElementById('search-clear');
+  const searchFeedback = document.getElementById('search-feedback');
 
-  function setFilter(cat) {
-    pills.forEach(p => {
-      p.classList.toggle('active', p.getAttribute('data-filter') === cat);
-    });
-    cards.forEach(c => {
-      const match = (cat === 'all' || c.getAttribute('data-category') === cat);
-      if (match) {
-        c.classList.remove('filtered-out');
-        c.classList.add('visible');
+  let activeCategory = 'all';
+  let activeQuery = '';
+
+  function applyFilters() {
+    let visibleCount = 0;
+    const query = activeQuery.trim().toLowerCase();
+
+    cards.forEach(card => {
+      const cat = card.getAttribute('data-category') || '';
+      const catMatch = (activeCategory === 'all' || cat === activeCategory);
+      
+      let searchMatch = true;
+      if (query.length > 0) {
+        const text = (card.innerText || card.textContent).toLowerCase();
+        searchMatch = text.includes(query);
+      }
+
+      if (catMatch && searchMatch) {
+        card.classList.remove('filtered-out');
+        card.classList.add('visible');
+        visibleCount++;
       } else {
-        c.classList.add('filtered-out');
+        card.classList.add('filtered-out');
       }
     });
+
+    // Update clear button
+    if (searchClear) {
+      searchClear.style.display = query.length > 0 ? 'block' : 'none';
+    }
+
+    // Update feedback
+    if (searchFeedback) {
+      if (query.length > 0) {
+        if (visibleCount === 0) {
+          searchFeedback.textContent = 'Zero notes found matching "' + query + '"';
+          searchFeedback.style.color = 'var(--accent-light)';
+        } else {
+          searchFeedback.textContent = visibleCount + ' matching note' + (visibleCount === 1 ? '' : 's');
+          searchFeedback.style.color = 'var(--text-muted)';
+        }
+      } else {
+        searchFeedback.textContent = '';
+      }
+    }
   }
 
   pills.forEach(pill => {
     pill.addEventListener('click', () => {
-      const cat = pill.getAttribute('data-filter');
-      setFilter(cat);
+      activeCategory = pill.getAttribute('data-filter') || 'all';
+      pills.forEach(p => p.classList.toggle('active', p === pill));
+      applyFilters();
       if (history.pushState) {
-        history.pushState(null, null, cat === 'all' ? '#' : '#' + cat);
+        history.pushState(null, null, activeCategory === 'all' ? '#' : '#' + activeCategory);
       }
     });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      activeQuery = e.target.value;
+      applyFilters();
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        activeQuery = '';
+        applyFilters();
+        searchInput.blur();
+      }
+    });
+  }
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
+      activeQuery = '';
+      applyFilters();
+    });
+  }
+
+  // Hotkey: press '/' to focus search
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== searchInput && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+      e.preventDefault();
+      searchInput && searchInput.focus();
+    }
   });
 
   // Handle URL hash on initial load
   const hash = (window.location.hash || '').replace('#', '').toLowerCase();
   if (['research', 'architecture', 'lore'].includes(hash)) {
-    setFilter(hash);
+    activeCategory = hash;
+    pills.forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === hash));
   }
+
+  applyFilters();
 })();
 </script>
 </body>

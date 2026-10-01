@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 // Latent Void — iceboks.site</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+<style>
+  :root {
+    --accent: #a855f7;
+    --accent-light: #c084fc;
+    --accent-dim: #6b21a8;
+  }
+  body {
+    background: #060608;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 2rem 1.5rem;
+    overflow-x: hidden;
+  }
+  .void-box {
+    position: relative;
+    z-index: 2;
+    max-width: 620px;
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 14px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 0 50px rgba(168, 85, 247, 0.12), 0 16px 40px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  }
+  .void-kicker {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin-bottom: 1rem;
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 9999px;
+  }
+  .void-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #fff, #c084fc, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .void-desc {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+  .terminal-box {
+    background: #040406;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 0.9rem 1.2rem;
+    text-align: left;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    overflow-x: auto;
+  }
+  .terminal-box span.green { color: #2dd4bf; }
+  .terminal-box span.purple { color: #c084fc; }
+  .terminal-box span.dim { color: #5a5650; }
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1.15rem;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+  .btn-primary {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-dim);
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent-light);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+</style>
+<script src="site.assets/analytics.js?v=20260828"></script>
+</head>
+<body>
+<canvas id="synapse-canvas"></canvas>
+
+<div class="void-box">
+  <div class="void-kicker">ERR_ZERO_ACTIVATION_DENSITY</div>
+  <h1 class="void-title">404 // VOID</h1>
+  <p class="void-desc">
+    You reached a latent coordinate with zero activation density. The weights here collapsed into static noise.
+  </p>
+
+  <div class="terminal-box">
+    <div><span class="purple">$</span> iceboks-trace --target <span class="green" id="req-path">404</span></div>
+    <div class="dim">status: packet dropped · manifold boundary exceeded</div>
+    <div><span class="purple">&gt;</span> <span class="green">[OK]</span> core infrastructure alive on metal. routing home...</div>
+  </div>
+
+  <div class="btn-row">
+    <a href="index.html" class="btn btn-primary">&larr; Return Home</a>
+    <a href="collaborate.html" class="btn btn-ghost">About / Collaborate</a>
+    <a href="art.html" class="btn btn-ghost">Art Gallery</a>
+    <a href="music.html" class="btn btn-ghost">Music</a>
+  </div>
+</div>
+
+<script src="site.assets/synapse-bg.js"></script>
+<script>
+  // Display current pathname in terminal simulation
+  try {
+    var p = window.location.pathname || 'unknown';
+    var el = document.getElementById('req-path');
+    if (el) el.textContent = p;
+  } catch(e) {}
+</script>
+</body>
+</html>

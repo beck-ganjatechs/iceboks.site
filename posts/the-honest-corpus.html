@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="../favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="alternate" type="application/rss+xml" title="iceboks — Field Notes" href="../feed.xml">
 
 <meta charset="UTF-8">
@@ -656,10 +658,26 @@
     color: #fff;
   }
 
+
+  /* === READING PROGRESS BAR === */
+  .reading-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2.5px;
+    width: 0%;
+    background: linear-gradient(90deg, #c084fc, #a855f7, #2dd4bf);
+    z-index: 1000;
+    transition: width 0.08s ease-out;
+    pointer-events: none;
+    box-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+  }
+
 </style>
 <script src="../site.assets/analytics.js?v=20260823"></script>
 </head>
 <body>
+<div class="reading-progress-bar" id="reading-progress" aria-hidden="true"></div>
 
 <canvas id="synapse-canvas"></canvas>
 
@@ -924,5 +942,17 @@ window.addEventListener('scroll', updateNav, { passive: true });
 updateNav();
 </script>
 
+<script>
+// Reading progress bar
+(function() {
+  window.addEventListener('scroll', function() {
+    var bar = document.getElementById('reading-progress');
+    if (!bar) return;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    var scrolled = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+    bar.style.width = Math.min(100, Math.max(0, scrolled)) + '%';
+  }, { passive: true });
+})();
+</script>
 </body>
 </html>
